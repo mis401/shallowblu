@@ -16,6 +16,29 @@ def blit_before_gui():
     gradient = tp.graphics.color_gradient(((0, 0, 0), (white_value, white_value, white_value)), (W, H), "v")
     screen.blit(gradient, (0, 0))
     draw_chessboard(matrix_size)
+    draw_small_shapes(matrix_size)
+
+def draw_small_shapes(matrix_size):
+    square_size = 30
+    total_width = matrix_size * square_size
+    total_height = matrix_size * square_size
+
+    # Calculate the position to center the small shapes
+    center_x = (screen.get_width() - total_width) // 2
+    center_y = (screen.get_height() - total_height) // 2
+
+    start_from_second = True  # Flag to toggle starting from the second column
+
+    for row in range(1, matrix_size - 1):  # Exclude the first and last row
+        for col in range(1 if start_from_second else 0, matrix_size - 1):  # Exclude the first and last column
+            if row % 2 == 1 and col % 2 == 0:  # Odd row, even column
+                color = (255, 0, 0)
+                pygame.draw.circle(screen, color, (center_x + col * square_size + square_size // 2, center_y + row * square_size + square_size // 2), square_size // 2)
+            elif row % 2 == 0 and col % 2 == 1:  # Even row, odd column
+                color = (0, 0, 255)
+                pygame.draw.circle(screen, color, (center_x + col * square_size + square_size // 2, center_y + row * square_size + square_size // 2), square_size // 2)
+
+    start_from_second = not start_from_second  # Toggle the flag after the first iteration
 
 def draw_chessboard(matrix_size):
     square_size = 30
@@ -28,11 +51,14 @@ def draw_chessboard(matrix_size):
 
     for row in range(matrix_size):
         for col in range(matrix_size):
-            color = (0, 0, 0) if (row + col) % 2 == 0 else (255, 255, 255)
+            is_even_row = row % 2 == 0
+            is_even_col = col % 2 == 0
+            color = (0, 0, 0) if (is_even_row and is_even_col) or (not is_even_row and not is_even_col) else (255, 255, 255)
             pygame.draw.rect(screen, color, [center_x + col * square_size, center_y + row * square_size, square_size, square_size])
+
 choices_whos_first = ("player", "computer")
 whos_first_text = "Ko prvi igra?"
-alert2 = tp.AlertWithChoices("Tko prvi igra?", choices_whos_first, whos_first_text, choice_mode="h")
+alert2 = tp.AlertWithChoices("ko prvi igra?", choices_whos_first, whos_first_text, choice_mode="h")
 choices_matix = ("8", "10", "12", "14", "16")
 matrix_text = "Koju zelite dimeziju?"
 alert1 = tp.AlertWithChoices("Grid dimenzija", choices_matix, matrix_text, choice_mode="v")
