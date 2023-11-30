@@ -39,7 +39,7 @@ class AppState:
 def setMice(currentState, newState):
     newMatrix = Matrix(currentState.matrix.size())
     for item in newState:
-        newMatrix.matrix[item[0]][item[1]].stack = item[2]
+        newMatrix.matrix[item[0]][item[1]].stack = [*item[2]]
     return newMatrix
 
 class Color(Enum):
