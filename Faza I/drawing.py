@@ -93,7 +93,7 @@ def selectDestSquare(pos):
         selectedRow = (pos[1] - top_left_y) // square_size
         destSquare = matrix[selectedRow][selectedCol]
         appState.currentMove[2] = (selectedRow, selectedCol)
-        return True
+        return True 
     except Exception as e:
         appState.currentMove = [None, None, None]
         print(e)
@@ -125,6 +125,7 @@ alert2 = tp.AlertWithChoices("ko prvi igra?", choices_whos_first, whos_first_tex
 choices_matix = ("8", "10", "12", "14", "16")
 matrix_text = "Koju zelite dimeziju?"
 alert1 = tp.AlertWithChoices("Grid dimenzija", choices_matix, matrix_text, choice_mode="v")
+
 
 matrix_size = 0
 whos_first=""
@@ -163,23 +164,27 @@ iteration = 0
 
 
 def performMove():
-    if not checkMove():
+    startPos = appState.currentMove[0]
+    destPos = appState.currentMove[2]
+    sliceIndex = appState.currentMove[1]
+    if not checkMove(startPos, sliceIndex, destPos):
         print("nevalidan potez")
         appState.currentMove = [None, None, None]
         return
-    print("prihvacen potez" + str(appState.currentMove[0]) + str(appState.currentMove[1]) + str(appState.currentMove[2]))
-    appState.set_state(appState.currentMove[0], appState.currentMove[1], appState.currentMove[2])
+    print("prihvacen potez" + str(startPos) + str(sliceIndex) + str(destPos))
+    appState.set_state(startPos, sliceIndex, destPos)
     appState.currentMove = [None, None, None]
-    
 
-def checkMove():
-    dx = abs(appState.currentMove[0][0] - appState.currentMove[2][0])
-    dy = abs(appState.currentMove[0][1] - appState.currentMove[2][1])
+
+def checkMove(startPos, sliceIndex, destPos):
+    dx = abs( startPos[0] - destPos[0])
+    dy = abs(startPos[1] - destPos[1])
+    validity = False
     if dx == 1 and dy == 1:
-        return True
-    else:
-        return False
-
+        validity = True
+    if len(appState.matrix.matrix[destPos[0]][destPos[1]].stack) + len(appState.matrix.matrix[startPos[0]][startPos[1]].stack[sliceIndex:]) > 8:
+        validity = False
+    return validity
 
 while loop.playing:
     clock.tick(loop.fps)
@@ -196,6 +201,11 @@ while loop.playing:
                 dest = selectDestSquare(pygame.mouse.get_pos())
                 if (dest):
                     performMove()
+                    if (appState.finished):
+                        print("finished")
+                        winAlert = tp.Alert("Pobednik je: " + appState.currentPlayer)
+                        winAlert.launch()
+                        loop.playing = False
 
 
     loop.update(blit_before_gui, events=events)

@@ -23,3 +23,6 @@ start: pocetak poteza ->
 		-> korisnik selektuje dest polje 
 		->  provera ispravnosti dest polja i valjanosti poteza (moze i na osnovu liste vracenih mogucih poteza ili ponovo kalkulacija)->generise se validan potez
 -> dobija se potez -> modifikuje se stanje -> iscrtava se stanje -> menja se igrac na potezu -> start
+
+
+END STATE PLAYER STATE

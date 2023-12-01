@@ -46,7 +46,18 @@ class AppState:
 
     # def set_state(self, newState):
     #     self.matrix = setState(self.matrix, newState)
+    def switchPlayer(self):
+        self.currentPlayer = Player.Player if self.currentPlayer == Player.Computer else Player.Computer
 
+    def scoreIncrement(self, player):
+        if player == Player.Player:
+            self.score.Player += 1
+            if self.score.Player > self.winCondition:
+                self.finished = True
+        else:
+            self.score.Computer += 1
+            if self.score.Computer > self.winCondition:
+                self.finished = True
 
     #valid move => (src(x, y), stackslice, dst(x, y))
     def set_state(self, src, stackslice, dst):
@@ -54,9 +65,20 @@ class AppState:
         print(extractedSlice)
         self.matrix.matrix[src[0]][src[1]].stack = self.matrix.matrix[src[0]][src[1]].stack[:stackslice]
         self.matrix.matrix[dst[0]][dst[1]].stack = self.matrix.matrix[dst[0]][dst[1]].stack + extractedSlice
+        if len(self.matrix.matrix[dst[0]][dst[1]].stack) > 8:
+            self.currentMove = [None, None, None]
+            raise Exception("Stack overflow")
+        if len(self.matrix.matrix[dst[0]][dst[1]].stack) == 8:
+            scoreIncrement(self.matrix.matrix[dst[0]][dst[1]].stack[0].color)
+        if self.finished==False:
+            self.switchPlayer()
         
     def get_state(self):
         return self.matrix
+    
+
+
+
     
 def setStateImmutable(currentState, newState):
     newMatrix = Matrix(len(currentState.matrix))
@@ -71,6 +93,7 @@ class Color(Enum):
 class Player(Enum):
     Player="player"
     Computer="computer"
+    
 
 
 def add(self, secondStack):
@@ -78,12 +101,3 @@ def add(self, secondStack):
         raise Exception("Stack overflow")
     self.stack = self.stack + secondStack
 
-def scoreIncrement(player):
-    if player == Player.Player:
-        AppState.score.Player += 1
-        if AppState.score.Player > AppState.winCondition:
-            AppState.finished = True
-    else:
-        AppState.score.Computer += 1
-        if AppState.score.Computer > AppState.winCondition:
-            AppState.finished = True
