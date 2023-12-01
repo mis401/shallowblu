@@ -1,25 +1,27 @@
 from enum import Enum
 class Mica:
     def __init__(self, color):
-        self._color = color
+        self.color = color
 
 class Field:
     def __init__(self, color):
+        print("creating field")
         self.stack = []
         self.color = color
 
 
 class Matrix:
     def __init__(self, N):
+        print("creating matrix")
         self.matrix = [[Field(Color.BLACK if (i+j)%2 == 0 else Color.WHITE) for i in range(N)] for j in range(N)]
 
     def startPositions(self):
-        for j in range(0, self.matrix.size()):
+        for j in range(0, len(self.matrix)):
             if j%2==0:
-                for i in range(2, self.matrix.size()-1, 2):
+                for i in range(2, len(self.matrix)-1, 2):
                     self.matrix[i][j].stack.append(Mica(Color.WHITE))
             else:
-                for i in range(1, self.matrix.size()-2, 2):
+                for i in range(1, len(self.matrix)-2, 2):
                     self.matrix[i][j].stack.append(Mica(Color.BLACK))
 
 class Score:
@@ -32,13 +34,15 @@ class Score:
 
 class AppState:
     def __init__(self, N, firstPlayer):
-        self.matrix = Matrix(N, N)
+        print("creating appstate")
+        self.matrix = Matrix(N)
         self.matrix.startPositions()
         self.currentPlayer = firstPlayer
         self.score = Score()
         self.finished = False
         #broj mica = (n-2)*n/2, max stackova je to /8, uslov za pobedu je vise od tog /2
         self.winCondition = (N-2)*(N/2)/8/2
+        self.currentMove = [None, None, None]
 
     # def set_state(self, newState):
     #     self.matrix = setState(self.matrix, newState)
@@ -47,14 +51,15 @@ class AppState:
     #valid move => (src(x, y), stackslice, dst(x, y))
     def set_state(self, src, stackslice, dst):
         extractedSlice = self.matrix.matrix[src[0]][src[1]].stack[stackslice:]
+        print(extractedSlice)
         self.matrix.matrix[src[0]][src[1]].stack = self.matrix.matrix[src[0]][src[1]].stack[:stackslice]
-        self.matrix.matrix[dst[0]][dst[1]].stack = self.matrix.matrix[dst[0]][dst[1]].stack + stackslice
+        self.matrix.matrix[dst[0]][dst[1]].stack = self.matrix.matrix[dst[0]][dst[1]].stack + extractedSlice
         
     def get_state(self):
         return self.matrix
     
 def setStateImmutable(currentState, newState):
-    newMatrix = Matrix(currentState.matrix.size())
+    newMatrix = Matrix(len(currentState.matrix))
     for item in newState:
         newMatrix.matrix[item[0]][item[1]].stack = [*item[2]]
     return newMatrix
