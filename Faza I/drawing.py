@@ -47,7 +47,7 @@ def draw_square(field, x, y, square_size):
 def draw_mica(mica, x, y, width):
 
     height = width / 8
-    color = (90, 90, 90) if mica.color == Color.BLACK else (150, 150, 150)
+    color = (41, 66, 142) if mica.color == Color.BLACK else (105, 123, 176)
     mica=pygame.draw.rect(screen, color, [x, y, width, height])
     
 def selectMica(pos):
