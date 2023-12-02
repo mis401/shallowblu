@@ -1,19 +1,19 @@
 from enum import Enum
 class Mica:
     def __init__(self, color):
-        self.color = color
+        self.color : Color = color
 
 class Field:
     def __init__(self, color):
         print("creating field")
-        self.stack = []
-        self.color = color
+        self.stack: Mica = []
+        self.color : Color = color
 
 
 class Matrix:
     def __init__(self, N):
         print("creating matrix")
-        self.matrix = [[Field(Color.BLACK if (i+j)%2 == 0 else Color.WHITE) for i in range(N)] for j in range(N)]
+        self.matrix : Field = [[Field(Color.BLACK if (i+j)%2 == 0 else Color.WHITE) for i in range(N)] for j in range(N)]
 
     def startPositions(self):
         for j in range(0, len(self.matrix)):
@@ -25,19 +25,19 @@ class Matrix:
                     self.matrix[i][j].stack.append(Mica(Color.BLACK))
 
 class Score:
-    Player = 0
-    Computer = 0
     def __init__(self):
-        self.Player = 0
-        self.Computer = 0
+        self.PlayerOne = 0
+        self.PlayerTwo = 0
 
 
 class AppState:
     def __init__(self, N, firstPlayer):
         print("creating appstate")
+        print(firstPlayer == PlayerType.Player.value)
         self.matrix = Matrix(N)
         self.matrix.startPositions()
-        self.currentPlayer = firstPlayer
+        self.players = [Player(PlayerType.Player, Color.WHITE if firstPlayer==PlayerType.Player.value else Color.BLACK), Player(PlayerType.Computer, Color.WHITE if firstPlayer == PlayerType.Computer.value else Color.WHITE)]
+        self.currentPlayer = self.players[0] if self.players[0].color == Color.WHITE else self.players[1]
         self.score = Score()
         self.finished = False
         #broj mica = (n-2)*n/2, max stackova je to /8, uslov za pobedu je vise od tog /2
@@ -47,29 +47,34 @@ class AppState:
     # def set_state(self, newState):
     #     self.matrix = setState(self.matrix, newState)
     def switchPlayer(self):
-        self.currentPlayer = Player.Player if self.currentPlayer == Player.Computer else Player.Computer
+        print("switching players")
+        self.currentPlayer = self.players[1] if self.currentPlayer == self.players[0] else self.players[0]
 
-    def scoreIncrement(self, player):
-        if player == Player.Player:
-            self.score.Player += 1
-            if self.score.Player > self.winCondition:
+    def scoreIncrement(self, color):
+        print("inkrementira se skor za " + color.name)
+        if self.players[0].color == color:
+            self.score.PlayerOne +=1
+            if self.score.PlayerOne > self.winCondition:
                 self.finished = True
         else:
-            self.score.Computer += 1
-            if self.score.Computer > self.winCondition:
+            self.score.PlayerTwo += 1
+            if self.score.PlayerTwo > self.winCondition:
                 self.finished = True
+        print(self.score.PlayerOne)
+        print(self.score.PlayerTwo)
 
     #valid move => (src(x, y), stackslice, dst(x, y))
     def set_state(self, src, stackslice, dst):
         extractedSlice = self.matrix.matrix[src[0]][src[1]].stack[stackslice:]
-        print(extractedSlice)
+        print("Menja se stanje:")
         self.matrix.matrix[src[0]][src[1]].stack = self.matrix.matrix[src[0]][src[1]].stack[:stackslice]
         self.matrix.matrix[dst[0]][dst[1]].stack = self.matrix.matrix[dst[0]][dst[1]].stack + extractedSlice
         if len(self.matrix.matrix[dst[0]][dst[1]].stack) > 8:
             self.currentMove = [None, None, None]
             raise Exception("Stack overflow")
         if len(self.matrix.matrix[dst[0]][dst[1]].stack) == 8:
-            scoreIncrement(self.matrix.matrix[dst[0]][dst[1]].stack[0].color)
+            self.scoreIncrement(self.matrix.matrix[dst[0]][dst[1]].stack[7].color)
+            self.matrix.matrix[dst[0]][dst[1]].stack.clear()
         if self.finished==False:
             self.switchPlayer()
         
@@ -90,11 +95,14 @@ class Color(Enum):
     BLACK=0
     WHITE=1
 
-class Player(Enum):
+class PlayerType(Enum):
     Player="player"
     Computer="computer"
     
-
+class Player:
+    def __init__(self, typeOfPlayer, color):
+        self.type : PlayerType = typeOfPlayer
+        self.color : Color = color
 
 def add(self, secondStack):
     if(len(self.stack) + len(secondStack) > 8):

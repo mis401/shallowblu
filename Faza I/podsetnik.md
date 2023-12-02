@@ -25,4 +25,3 @@ start: pocetak poteza ->
 -> dobija se potez -> modifikuje se stanje -> iscrtava se stanje -> menja se igrac na potezu -> start
 
 
-END STATE PLAYER STATE

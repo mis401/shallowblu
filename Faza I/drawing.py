@@ -25,6 +25,9 @@ def blit_before_gui():
     if not appState:
         return
     draw_chessboard()
+    if appState and appState.finished == True:
+        winAlert = tp.Alert("Kraj igre", "Pobednik je: " + appState.currentPlayer.type.value)
+        winAlert.launch_alone()
     
 # def hardCodedStateChange():
 #     move = ((2, 0), 0, (3, 0))
@@ -70,6 +73,8 @@ def selectMica(pos):
         micaPos = min(micaPos, len(selectedSquare.stack)-1)
         #micaPos = selectedSquare["square"].stack[-micaPos] if micaPos >= len(selectedSquare["square"].stack) else selectedSquare["square"].stack[len(selectedSquare["square"].stack)-1]
         selectedMica = selectedSquare.stack[micaPos]
+        #if not selectedMica.color == appState.currentPlayer.color:
+        #    raise Exception("pogresna boja")
         appState.currentMove[0] = (selectedRow, selectedCol)
         appState.currentMove[1] = micaPos
         return True
@@ -142,11 +147,13 @@ def my_func():
         print(matrix_size)
         whos_first = alert2.choice
         print('preprint')
-        print(initialState)
+        print(whos_first)
         if appState == None and initialState == False:
             print("usao u if")
             appState = AppState(matrix_size, whos_first)
             initialState = True
+        
+
     except Exception as e:
         print(e)
         pass
@@ -186,30 +193,39 @@ def checkMove(startPos, sliceIndex, destPos):
         validity = False
     return validity
 
+def aiMove():
+    print("ai move")
+    if appState:
+        appState.switchPlayer()
+    return
+
+
 while loop.playing:
     clock.tick(loop.fps)
     events = pygame.event.get()
-    for e in events:
-        if e.type == pygame.QUIT:
-            loop.playing = False
-        if e.type == pygame.MOUSEBUTTONUP:
-            if appState and not appState.currentMove[0]:
-                print("selekting mica")
-                selectMica(pygame.mouse.get_pos())
-            elif appState and appState.currentMove[0] and not appState.currentMove[2]:
-                print("selekting dest square")
-                dest = selectDestSquare(pygame.mouse.get_pos())
-                if (dest):
-                    performMove()
-                    if (appState.finished):
-                        print("finished")
-                        winAlert = tp.Alert("Pobednik je: " + appState.currentPlayer)
-                        winAlert.launch()
-                        loop.playing = False
-
+    if appState and appState.currentPlayer.type == PlayerType.Player:
+        for e in events:
+            if e.type == pygame.QUIT:
+                loop.playing = False
+            if e.type == pygame.MOUSEBUTTONUP:
+                if appState and not appState.currentMove[0]:
+                    print("selekting mica")
+                    selectMica(pygame.mouse.get_pos())
+                elif appState and appState.currentMove[0] and not appState.currentMove[2]:
+                    print("selekting dest square")
+                    dest = selectDestSquare(pygame.mouse.get_pos())
+                    if (dest):
+                        performMove()
+                        if (appState.finished):
+                            print("finished")
+                            
+                            
+    elif appState and appState.currentPlayer.type == PlayerType.Computer:
+        aiMove()
 
     loop.update(blit_before_gui, events=events)
     pygame.display.flip()
     iteration += 1
+
 
 pygame.quit()
