@@ -1,0 +1,1 @@
+Aplikacija se pokrece pokretanjem drawing.py 
