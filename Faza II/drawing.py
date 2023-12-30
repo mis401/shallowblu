@@ -9,9 +9,10 @@ import thorpy as tp
 import time
 from state import *
 
-LIGTH_RED=(128,0,0)
+RED=(128,0,0)
 DARK_RED=(75,15,15)
 GRAY=(124,124,124)
+BLUE= (15,67,146)
 initialState = False
 appState = None
 selectedMica = None
@@ -85,7 +86,7 @@ def draw_chessboard(square_size=64):
 def draw_square(field, x, y, square_size, selected = False):
     color = (0, 0, 0) if field.color == Color.BLACK else (255, 255, 255)
     if selected:
-        color = (0, 150, 0)
+        color = GRAY
     pygame.draw.rect(screen, color, [x, y, square_size, square_size])
     dy = square_size / 8
     bottom = y + square_size
@@ -93,13 +94,27 @@ def draw_square(field, x, y, square_size, selected = False):
         draw_mica(mica, x, bottom-dy, square_size, selected and field.stack.index(mica) == appState.currentMove[1])
         bottom -= dy
 
-def draw_mica(mica, x, y, width, selected = False):
-
+def draw_mica(mica, x, y, width, selected=False):
     height = width / 8
-    color = (41, 66, 142) if mica.color == Color.BLACK else (105, 123, 176)
+    color = BLUE if mica.color == Color.BLACK else RED
     if selected:
-        color = (0, 190, 0)
-    mica=pygame.draw.rect(screen, color, [x, y, width, height])
+        color = GRAY
+    border_color = (0, 0, 0)  # Green, for example
+    # ovo ce biti crni okvir
+    mica = pygame.draw.rect(screen, border_color, [x, y, width, height])
+
+    border_thickness = 1  
+
+    inner_x = x + border_thickness
+    inner_y = y + border_thickness
+    inner_width = width - 2 * border_thickness
+    inner_height = height - 2 * border_thickness
+
+    # Make sure inner dimensions are positive
+    if inner_width > 0 and inner_height > 0:
+        # Unutrasnji rect je zapravo MICA
+        inner_rect = pygame.draw.rect(screen, color, [inner_x, inner_y, inner_width, inner_height])
+
     
 def selectMica(pos):
 
@@ -330,17 +345,17 @@ alert1 = tp.AlertWithChoices("", choices_matix, matrix_text, choice_mode="v")
 #set alert bacground color to be black and text color to be white and for theis hover state to be red for the choices
 
 alert1.set_bck_color((0, 0, 0), "all", True, True, False)
-alert1.set_font_color(LIGTH_RED, ["hover", "pressed"], True, True, True)
+alert1.set_font_color(RED, ["hover", "pressed"], True, True, True)
 alert2.set_bck_color((0, 0, 0), "all", True, True, False)
-alert2.set_font_color(LIGTH_RED,  ["hover", "pressed"], True, True, True)
+alert2.set_font_color(RED,  ["hover", "pressed"], True, True, True)
 alert_sp.set_bck_color((0, 0, 0), "all", True, True, False)
-alert_sp.set_font_color(LIGTH_RED, ["hover", "pressed"], True, True, True)
+alert_sp.set_font_color(RED, ["hover", "pressed"], True, True, True)
 
 
 launcher = tp.Button("Kreni sa igrom")
 launcher.set_topleft(10, 10)
 launcher.at_unclick = my_func
-launcher.set_font_color(LIGTH_RED, "all", True, True, True)
+launcher.set_font_color(RED, "all", True, True, True)
 launcher.at_hover = lambda: launcher.set_font_color((255, 0, 0), "all", True, True, True)
 launcher.set_bck_color((0, 0, 0))
 
