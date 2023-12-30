@@ -1,3 +1,7 @@
+import sys
+
+print(sys.executable)
+
 import queue
 import pygame
 import math
@@ -5,7 +9,9 @@ import thorpy as tp
 import time
 from state import *
 
-
+LIGTH_RED=(128,0,0)
+DARK_RED=(75,15,15)
+GRAY=(124,124,124)
 initialState = False
 appState = None
 selectedMica = None
@@ -20,15 +26,20 @@ tp.init(screen, tp.theme_human)  # bind screen to gui elements and set theme
 
 matrix_size = 0
 whos_first=""
+#funkcije za zatvaranje popup prozora manuelno
+def close_alert():
+    alert1.unlaunch()
+    alert_sp.unlaunch()
 def my_func():
     global matrix_size
     global initialState
     global appState
     if initialState == False:
-        alert_sp.launch_alone()
-        alert1.launch_alone()
+        alert_sp.launch_alone(func_before=blit_before_gui)
+        alert1.launch_alone(func_before=blit_before_gui)
+        alert1._at_click = close_alert
         if (alert_sp.choice == "singleplayer"):
-            alert2.launch_alone()
+            alert2.launch_alone(func_before=blit_before_gui)
     print("User has chosen:", alert1.choice)
     try:
         matrix_size = int(alert1.choice)
@@ -309,19 +320,29 @@ def possibleDestinations():
 
 choice_singleplayer = ("singleplayer", "multiplayer")
 singleplayer_text = "Izaberite mod igre"
-alert_sp = tp.AlertWithChoices("Izaberite mod igre", choice_singleplayer, singleplayer_text, choice_mode="h")
+alert_sp = tp.AlertWithChoices("", choice_singleplayer, singleplayer_text, choice_mode="h")
 choices_whos_first = ("player", "computer")
 whos_first_text = "Ko prvi igra?"
-alert2 = tp.AlertWithChoices("ko prvi igra?", choices_whos_first, whos_first_text, choice_mode="h")
+alert2 = tp.AlertWithChoices("", choices_whos_first, whos_first_text, choice_mode="h")
 choices_matix = ("8", "10", "12", "14", "16")
-matrix_text = "Koju zelite dimeziju?"
-alert1 = tp.AlertWithChoices("Grid dimenzija", choices_matix, matrix_text, choice_mode="v")
+matrix_text = "Koju zelite dimeziju grida?"
+alert1 = tp.AlertWithChoices("", choices_matix, matrix_text, choice_mode="v")
+#set alert bacground color to be black and text color to be white and for theis hover state to be red for the choices
 
-launcher = tp.Button("Odaberi velicinu table")
+alert1.set_bck_color((0, 0, 0), "all", True, True, False)
+alert1.set_font_color(LIGTH_RED, ["hover", "pressed"], True, True, True)
+alert2.set_bck_color((0, 0, 0), "all", True, True, False)
+alert2.set_font_color(LIGTH_RED,  ["hover", "pressed"], True, True, True)
+alert_sp.set_bck_color((0, 0, 0), "all", True, True, False)
+alert_sp.set_font_color(LIGTH_RED, ["hover", "pressed"], True, True, True)
+
+
+launcher = tp.Button("Kreni sa igrom")
 launcher.set_topleft(10, 10)
 launcher.at_unclick = my_func
-launcher2= tp.Button("Ko igra prvi?")
-launcher2.set_topleft(10, 50)
+launcher.set_font_color(LIGTH_RED, "all", True, True, True)
+launcher.at_hover = lambda: launcher.set_font_color((255, 0, 0), "all", True, True, True)
+launcher.set_bck_color((0, 0, 0))
 
 loop = launcher.get_updater(fps=60)
 clock = pygame.time.Clock()
