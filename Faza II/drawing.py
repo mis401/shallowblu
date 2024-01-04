@@ -65,6 +65,8 @@ def blit_before_gui():
     if not appState:
         return
     draw_chessboard()
+    draw_boxes_for_scores()
+    pygame.display.update()
     if appState and appState.finished == True:
         winAlert = tp.Alert("Kraj igre", "Pobednik je: " + appState.currentPlayer.type.value)
         winAlert.launch_alone()
@@ -82,6 +84,40 @@ def draw_chessboard(square_size=64):
             for col in range(matrix_size):
                 draw_square(matrix[row][col], center_x+col*square_size, center_y+row*square_size, square_size, appState and appState.currentMove[0] == (row, col))
 
+def draw_boxes_for_scores():
+    box_width, box_height = 100, 50  
+    border_thickness = 2  
+    box_margin = 10  
+    border_color = (0, 0, 0)  
+
+    font = pygame.font.Font(None, 33)  # Adjust the font size as needed
+
+    # ovde treba zapravo score koji brojimo
+    players = [("YOU", 0), ("AI", 0)]
+
+    for i, (player_name, score) in enumerate(players):
+        # i = 0, igrac je na levoj strani, inace na desnoj
+        x = box_margin if i == 0 else screen.get_width() - box_width - box_margin
+        y = screen.get_height() - box_height - box_margin
+
+         # UI razliciti detalji za svakog igraca
+        box_color = RED if i==0 else BLUE
+        text_color = RED if i==0 else BLUE
+        name_padding = 25 if i==0 else 40
+
+        # Draw the border
+        pygame.draw.rect(screen, border_color, (x - border_thickness, y - border_thickness, box_width + 2*border_thickness, box_height + 2*border_thickness))
+        # Draw the inner box
+        pygame.draw.rect(screen, box_color, (x, y, box_width, box_height))
+
+        name_text = font.render(player_name, True, text_color)
+        screen.blit(name_text, (x + name_padding, y - 30))  
+
+        score_text = font.render(str(score), True, (0, 0, 0))
+        screen.blit(score_text, (x + 40, y + 10))  
+
+
+    
 
 def draw_square(field, x, y, square_size, selected = False):
     color = (0, 0, 0) if field.color == Color.BLACK else (255, 255, 255)
