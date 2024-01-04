@@ -35,6 +35,7 @@ def my_func():
     global matrix_size
     global initialState
     global appState
+    launcher.set_invisible(True)    
     if initialState == False:
         alert_sp.launch_alone(func_before=blit_before_gui)
         alert1.launch_alone(func_before=blit_before_gui)
@@ -69,7 +70,8 @@ def blit_before_gui():
     pygame.display.update()
     if appState and appState.finished == True:
         winAlert = tp.Alert("Kraj igre", "Pobednik je: " + appState.currentPlayer.type.value)
-        winAlert.launch_alone()
+        winAlert.launch()
+       # loop.playing = False
 
 
 def draw_chessboard(square_size=64):
@@ -114,7 +116,7 @@ def draw_boxes_for_scores():
         screen.blit(name_text, (x + name_padding, y - 30))  
 
         score_text = font.render(str(score), True, (0, 0, 0))
-        screen.blit(score_text, (x + 40, y + 10))  
+        screen.blit(score_text, (x + 45, y + 15))  
 
 
     
@@ -394,12 +396,10 @@ launcher.at_unclick = my_func
 launcher.set_font_color(RED, "all", True, True, True)
 launcher.at_hover = lambda: launcher.set_font_color((255, 0, 0), "all", True, True, True)
 launcher.set_bck_color((0, 0, 0))
-
 loop = launcher.get_updater(fps=60)
+
 clock = pygame.time.Clock()
 iteration = 0
-
-
 
 while loop.playing:
     clock.tick(loop.fps)
