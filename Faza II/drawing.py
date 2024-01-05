@@ -9,9 +9,9 @@ import thorpy as tp
 import time
 from state import *
 
-RED=(208,197,170)
+BEIGE=(208,197,170)
 DARK_RED=(75,15,15)
-GRAY=(124,124,124)
+GRAY=(86,99,142)
 BLUE= (130,142,184)
 BLACK=(27,32,51)
 WHITE=(223,224,229)
@@ -30,11 +30,8 @@ tp.init(screen, tp.theme_human)  # bind screen to gui elements and set theme
 
 matrix_size = 0
 whos_first=""
-#funkcije za zatvaranje popup prozora manuelno
-# def close_alert():
-#     alert1.unlaunch()
-#     alert_sp.unlaunch()
 isSingleplayer = False
+
 def user_choice():
     global matrix_size
     global initialState
@@ -48,9 +45,7 @@ def user_choice():
         if (alert_sp.choice == "singleplayer"):        
             alert2.launch_alone(func_before=blit_before_gui)
             isSingleplayer = True
-            
-                
-            
+                        
             
     print("User has chosen:", alert1.choice)
     try:
@@ -114,8 +109,8 @@ def draw_boxes_for_scores():
         y = screen.get_height() - box_height - box_margin
 
          # UI razliciti detalji za svakog igraca
-        box_color = RED if i==0 else BLUE
-        text_color = RED if i==0 else BLUE
+        box_color = BEIGE if i==0 else BLUE
+        text_color = BEIGE if i==0 else BLUE
         name_padding = 25 if i==0 else 15
 
         # Draw the border
@@ -143,7 +138,7 @@ def draw_square(field, x, y, square_size, selected = False):
 
 def draw_mica(mica, x, y, width, selected=False):
     height = width / 8
-    color = BLUE if mica.color == Color.BLACK else RED
+    color = BLUE if mica.color == Color.BLACK else BEIGE
     if selected:
         color = GRAY
     border_color = (0, 0, 0)  # Green, for example
