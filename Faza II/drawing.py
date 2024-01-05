@@ -9,10 +9,13 @@ import thorpy as tp
 import time
 from state import *
 
-RED=(128,0,0)
+RED=(208,197,170)
 DARK_RED=(75,15,15)
 GRAY=(124,124,124)
-BLUE= (15,67,146)
+BLUE= (130,142,184)
+BLACK=(27,32,51)
+WHITE=(223,224,229)
+
 initialState = False
 appState = None
 selectedMica = None
@@ -28,20 +31,27 @@ tp.init(screen, tp.theme_human)  # bind screen to gui elements and set theme
 matrix_size = 0
 whos_first=""
 #funkcije za zatvaranje popup prozora manuelno
-def close_alert():
-    alert1.unlaunch()
-    alert_sp.unlaunch()
-def my_func():
+# def close_alert():
+#     alert1.unlaunch()
+#     alert_sp.unlaunch()
+isSingleplayer = False
+def user_choice():
     global matrix_size
     global initialState
     global appState
+    global isSingleplayer
     launcher.set_invisible(True)    
     if initialState == False:
         alert_sp.launch_alone(func_before=blit_before_gui)
         alert1.launch_alone(func_before=blit_before_gui)
-        alert1._at_click = close_alert
-        if (alert_sp.choice == "singleplayer"):
+        #alert1._at_click = close_alert
+        if (alert_sp.choice == "singleplayer"):        
             alert2.launch_alone(func_before=blit_before_gui)
+            isSingleplayer = True
+            
+                
+            
+            
     print("User has chosen:", alert1.choice)
     try:
         matrix_size = int(alert1.choice)
@@ -58,11 +68,10 @@ def my_func():
         pass
 
 def blit_before_gui():
-    white_value = 127 + math.sin(iteration * math.pi * 0.5 / loop.fps) * 127
-    gradient = tp.graphics.color_gradient(((0, 0, 0), (white_value, white_value, white_value)), (W, H), "v")
+
+    gradient = tp.graphics.color_gradient((BLUE, WHITE), (W, H), "v")
     screen.blit(gradient, (0, 0))
-    # draw_chessboard(matrix_size)
-    # draw_small_shapes(matrix_size)
+
     if not appState:
         return
     draw_chessboard()
@@ -87,6 +96,7 @@ def draw_chessboard(square_size=64):
                 draw_square(matrix[row][col], center_x+col*square_size, center_y+row*square_size, square_size, appState and appState.currentMove[0] == (row, col))
 
 def draw_boxes_for_scores():
+    global isSingleplayer
     box_width, box_height = 100, 50  
     border_thickness = 2  
     box_margin = 10  
@@ -95,7 +105,8 @@ def draw_boxes_for_scores():
     font = pygame.font.Font(None, 33)  # Adjust the font size as needed
 
     # ovde treba zapravo score koji brojimo
-    players = [("YOU", 0), ("AI", 0)]
+    player_name="AI" if isSingleplayer else "Player2"
+    players = [("YOU", 0), (player_name, 0)]
 
     for i, (player_name, score) in enumerate(players):
         # i = 0, igrac je na levoj strani, inace na desnoj
@@ -105,7 +116,7 @@ def draw_boxes_for_scores():
          # UI razliciti detalji za svakog igraca
         box_color = RED if i==0 else BLUE
         text_color = RED if i==0 else BLUE
-        name_padding = 25 if i==0 else 40
+        name_padding = 25 if i==0 else 15
 
         # Draw the border
         pygame.draw.rect(screen, border_color, (x - border_thickness, y - border_thickness, box_width + 2*border_thickness, box_height + 2*border_thickness))
@@ -119,10 +130,8 @@ def draw_boxes_for_scores():
         screen.blit(score_text, (x + 45, y + 15))  
 
 
-    
-
 def draw_square(field, x, y, square_size, selected = False):
-    color = (0, 0, 0) if field.color == Color.BLACK else (255, 255, 255)
+    color = BLACK if field.color == Color.BLACK else WHITE
     if selected:
         color = GRAY
     pygame.draw.rect(screen, color, [x, y, square_size, square_size])
@@ -382,20 +391,20 @@ matrix_text = "Koju zelite dimeziju grida?"
 alert1 = tp.AlertWithChoices("", choices_matix, matrix_text, choice_mode="v")
 #set alert bacground color to be black and text color to be white and for theis hover state to be red for the choices
 
-alert1.set_bck_color((0, 0, 0), "all", True, True, False)
-alert1.set_font_color(RED, ["hover", "pressed"], True, True, True)
-alert2.set_bck_color((0, 0, 0), "all", True, True, False)
-alert2.set_font_color(RED,  ["hover", "pressed"], True, True, True)
-alert_sp.set_bck_color((0, 0, 0), "all", True, True, False)
-alert_sp.set_font_color(RED, ["hover", "pressed"], True, True, True)
+alert1.set_bck_color(WHITE, "all", True, True, False)
+alert1.set_font_color(BLUE, ["hover", "pressed"], True, True, True)
+alert2.set_bck_color(WHITE, "all", True, True, False)
+alert2.set_font_color(BLUE,  ["hover", "pressed"], True, True, True)
+alert_sp.set_bck_color(WHITE, "all", True, True, False)
+alert_sp.set_font_color(BLUE, ["hover", "pressed"], True, True, True)
 
 
 launcher = tp.Button("Kreni sa igrom")
 launcher.set_topleft(10, 10)
-launcher.at_unclick = my_func
-launcher.set_font_color(RED, "all", True, True, True)
-launcher.at_hover = lambda: launcher.set_font_color((255, 0, 0), "all", True, True, True)
-launcher.set_bck_color((0, 0, 0))
+launcher.at_unclick = user_choice
+launcher.set_font_color(BLUE, "all", True, True, True)
+launcher.at_hover = lambda: launcher.set_font_color(WHITE, "all", True, True, True)
+launcher.set_bck_color(BLACK)
 loop = launcher.get_updater(fps=60)
 
 clock = pygame.time.Clock()
