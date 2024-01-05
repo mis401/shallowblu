@@ -44,9 +44,8 @@ def user_choice():
         #alert1._at_click = close_alert
         if (alert_sp.choice == "singleplayer"):        
             alert2.launch_alone(func_before=blit_before_gui)
-            isSingleplayer = True
-                        
-            
+            isSingleplayer = True 
+
     print("User has chosen:", alert1.choice)
     try:
         matrix_size = int(alert1.choice)
@@ -71,6 +70,23 @@ def blit_before_gui():
         return
     draw_chessboard()
     draw_boxes_for_scores()
+
+     # Da pise ciji je red 
+    font = pygame.font.Font(None, 36)  # Adjust the font size as needed
+
+    if appState and appState.currentPlayer:
+        if appState.currentPlayer.type == PlayerType.Player:
+            text_color=BEIGE
+            turn_text = "Your turn"
+            text_position = (10, 10)  
+        else:
+            text_color=BLUE
+            turn_text = "AI's turn"
+            text_position = (W - 150, 10)  
+        # Render
+        turn_surface = font.render(turn_text, True, text_color)  # Black text
+        screen.blit(turn_surface, text_position)
+
     pygame.display.update()
     if appState and appState.finished == True:
         winAlert = tp.Alert("Kraj igre", "Pobednik je: " + appState.currentPlayer.type.value)
