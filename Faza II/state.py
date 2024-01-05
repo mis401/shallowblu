@@ -27,24 +27,18 @@ class Matrix:
                 for i in range(1, len(self.matrix)-2, 2):
                     self.matrix[i][j].stack.append(Mica(Color.BLACK))
 
-#klasa za vodjenje stanja poena
-class Score:
-    def __init__(self):
-        self.PlayerOne = 0
-        self.PlayerTwo = 0
-
 #klasa za igraca
 class Player:
     def __init__(self, typeOfPlayer, color):
         self.type : PlayerType = typeOfPlayer
         self.color : Color = color
+        self.score = 0
 
 
 #klasa za celokupno stanje aplikacije
 class AppState:
     def __init__(self, N, firstPlayer, mode):
         print("creating appstate")
-        print(firstPlayer == PlayerType.Player.value)
         self.matrix = Matrix(N)
         self.matrix.startPositions()
         self.players = [Player(PlayerType.Player, \
@@ -53,7 +47,6 @@ class AppState:
                                 else Color.WHITE)] if mode == "singleplayer" else \
                                 [Player(PlayerType.Player, Color.WHITE), Player(PlayerType.Player, Color.BLACK)]
         self.currentPlayer = self.players[0] if self.players[0].color == Color.WHITE else self.players[1]
-        self.score = Score()
         self.finished = False
         #broj mica = (n-2)*n/2, max stackova je to /8, uslov za pobedu je vise od tog /2
         self.winCondition = (N-2)*(N/2)/8/2
@@ -71,18 +64,10 @@ class AppState:
         if self.finished==False:
             self.switchPlayer()
 
-    def scoreIncrement(self, color):
-        print("inkrementira se skor za " + color.name)
-        if self.players[0].color == color:
-            self.score.PlayerOne +=1
-            if self.score.PlayerOne > self.winCondition:
-                self.finished = True
-        else:
-            self.score.PlayerTwo += 1
-            if self.score.PlayerTwo > self.winCondition:
-                self.finished = True
-        print(self.score.PlayerOne)
-        print(self.score.PlayerTwo)
+    def scoreIncrement(self):
+        self.currentPlayer.score += 1
+        if self.currentPlayer.score >= self.winCondition:
+            self.finished = True
 
             
     def switchPlayer(self):

@@ -182,6 +182,8 @@ def selectMica(pos):
         micaPos = int(upInSquare // (square_size / 8))
         print(micaPos)
         micaPos = min(micaPos, len(selectedSquare.stack)-1)
+        if micaPos < 0:
+            raise Exception("Prazno polje")
         print(micaPos)
         appState.currentMove[0] = (selectedRow, selectedCol)
         appState.currentMove[1] = micaPos
@@ -225,12 +227,22 @@ def performMove():
 
 
 def checkMove(startPos, sliceIndex, destPos):
+    start_time = time.perf_counter_ns()
+    end_time = time.perf_counter_ns()
+    if (appState.matrix.matrix[startPos[0]][startPos[1]].stack[sliceIndex].color != appState.currentPlayer.color):
+        end_time = time.perf_counter_ns()
+        print("check move time: " + str(end_time - start_time))
+        return False
     dx = abs( startPos[0] - destPos[0])
     dy = abs(startPos[1] - destPos[1])
     if not dx == 1 or not dy == 1:
+        end_time = time.perf_counter_ns()
+        print("check move time: " + str(end_time - start_time))
         return False
     if len(appState.matrix.matrix[destPos[0]][destPos[1]].stack) + \
         len(appState.matrix.matrix[startPos[0]][startPos[1]].stack[sliceIndex:]) > 8:
+        end_time = time.perf_counter_ns()
+        print("check move time: " + str(end_time - start_time))
         return False
     possiblePaths = possibleDestinations()
     sliceIndex = appState.currentMove[1]
@@ -238,9 +250,15 @@ def checkMove(startPos, sliceIndex, destPos):
     print(possiblePaths)
     possibleDests = list(filter(lambda x: x[1] == destPos, possiblePaths))
     if len(possibleDests) == 0:
+        end_time = time.perf_counter_ns()
+        print("check move time: " + str(end_time - start_time))
         return False
     if (len(appState.matrix.matrix[destPos[0]][destPos[1]].stack) <= appState.currentMove[1] and appState.currentMove[1] != 0):
+        end_time = time.perf_counter_ns()
+        print("check move time: " + str(end_time - start_time))
         return False
+    end_time = time.perf_counter_ns()
+    print("check move time: " + str(end_time - start_time))
     return True
 
 def aiMove():
@@ -255,7 +273,7 @@ def validField(field):
 
 #vraca dijagonalno susedna polja 
 def getNeighbours(field):
-    directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
+    directions = [(1, -1), (-1, -1), (-1, 1), (1, 1)] #clockwise
     neighbours = []
     for direction in directions:
         dest = (field[0] + direction[0], field[1] + direction[1])
@@ -264,41 +282,43 @@ def getNeighbours(field):
     return neighbours
 
 #BFS koji vraca najblize stackove
-# def findNearestDests(startPos):
-#     print("find nearest dests")
-#     closest = set()
-#     q = []
-#     visited = set()
-#     q.append(startPos)
-#     foundStack = False
-#     g = {}
-#     g[startPos] = 0
-#     prev_node = {}
-#     prev_node[startPos] = None
-#     while len(q) > 0:
-#         current = q.pop()
-#         if current in visited:
-#             continue
-#         visited.add(current)
-#         neighbours = getNeighbours(current)
-#         for neighbour in neighbours:
-#             if neighbour in visited:
-#                 continue
-#             prev_node[neighbour] = current
-#             g[neighbour] = g[current] + 1
-#             if len(appState.matrix.matrix[neighbour[0]][neighbour[1]].stack) > 0:
-#                 foundStack = True
-#                 path = []
-#                 prev = neighbour
-#                 while prev is not None:
-#                     path.append(prev)
-#                     prev = prev_node[prev]
-#                 path.reverse()
-#                 #closest.append((neighbour, g[neighbour], path)
-#                 closest.add(path[1])
-#             if not foundStack:
-#                 q.append(neighbour)
-#     return closest
+def findNearestDestBFS(startPos):
+    print("bfs search")
+    closest =[]
+    q = []
+    visited = set()
+    q.append(startPos)
+    foundStack = False
+    g = {}
+    g[startPos] = 0
+    prev_node = {}
+    prev_node[startPos] = None
+    closestG = -1
+    while len(q) > 0:
+        current = q.pop()
+        if current in visited or g[current] >= closestG:
+            continue
+        visited.add(current)
+        neighbours = getNeighbours(current)
+        for neighbour in neighbours:
+            if neighbour in visited:
+                continue
+            prev_node[neighbour] = current
+            g[neighbour] = g[current] + 1
+            if len(appState.matrix.matrix[neighbour[0]][neighbour[1]].stack) > 0:
+                foundStack = True
+                path = []
+                prev = neighbour
+                closestG = g[neighbour]
+                while prev is not None:
+                    path.append(prev)
+                    prev = prev_node[prev]
+                path.reverse()
+                #closest.append((neighbour, g[neighbour], path)
+                closest.append(path)
+            if not foundStack:
+                q.append(neighbour)
+    return closest
 
 
 
@@ -350,10 +370,13 @@ def findShortestRoute(startPos, destPos):
 
 def findNearestDests(startPos):
     paths = []
+    searchesConducted = 0
+    print("for search")
     for i in range(appState.matrixSize):
         for j in range(appState.matrixSize):
             if len(appState.matrix.matrix[i][j].stack) > 0 and (i, j) != startPos:
                 newPath = findShortestRoute(startPos, (i, j))
+                searchesConducted += 1
                 if not paths:
                     paths.append(newPath)
                 if paths and len(newPath) < len(paths[0]):
@@ -361,6 +384,8 @@ def findNearestDests(startPos):
                 if paths and len(newPath) > len(paths[0]):
                     continue
                 paths.append(newPath)
+                
+    print("Searches: " + str(searchesConducted))
     return paths
     
 #moguca odredista za trenutno selektovano polje
@@ -375,7 +400,7 @@ def possibleDestinations():
             destinations.append(neighbour)
     if (len(destinations) > 0):
         return list(map(lambda x: [appState.currentMove[0], x], destinations))
-    nearestStacks = findNearestDests(startPos) 
+    nearestStacks = findNearestDestBFS(startPos) 
     appState.currentMove[1] = 0 #mora da pomeri ceo stack jer nema suseda na koji moze da se popne
     print(nearestStacks)
     return nearestStacks
