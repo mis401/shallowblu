@@ -21,6 +21,7 @@ appState = None
 selectedMica = None
 selectedSquare = None
 destSquare = None
+previous_state=None
 
 pygame.init()
 W, H = 1200, 700
@@ -108,6 +109,7 @@ def draw_chessboard(square_size=64):
 
 def draw_boxes_for_scores():
     global isSingleplayer
+    global appState
     box_width, box_height = 100, 50  
     border_thickness = 2  
     box_margin = 10  
@@ -117,7 +119,7 @@ def draw_boxes_for_scores():
 
     # ovde treba zapravo score koji brojimo
     player_name="AI" if isSingleplayer else "Player2"
-    players = [("YOU", 0), (player_name, 0)]
+    players = [("YOU", appState.currentPlayer.score), (player_name, appState.currentPlayer.score)]
 
     for i, (player_name, score) in enumerate(players):
         # i = 0, igrac je na levoj strani, inace na desnoj
@@ -273,10 +275,28 @@ def checkMove(startPos, sliceIndex, destPos):
     return True
 
 def aiMove():
-    print("ai move")
-    if appState:
+    global appState
+    print("AI move")
+
+    best_score = float('-inf')
+    best_move = None
+
+    for move in get_valid_moves(appState, appState.currentPlayer.color):
+        apply_move(move)
+        score = minmax(depth=3, maximizingPlayer=False)  # Adjust depth as needed
+        undo_move(move)
+
+        if score > best_score:
+            best_score = score
+            best_move = move
+
+    # Perform the best move
+    if best_move:
+        appState.currentMove = [best_move[0], best_move[1], best_move[2]]
+        performMove()
         appState.switchPlayer()
-    return
+
+    return best_move  # Optional
 
 #okvir table
 def validField(field):
@@ -415,6 +435,84 @@ def possibleDestinations():
     appState.currentMove[1] = 0 #mora da pomeri ceo stack jer nema suseda na koji moze da se popne
     print(nearestStacks)
     return nearestStacks
+
+#for AI --------------------------
+def get_valid_moves(appState, ai_color):
+    valid_moves = []
+    stack_count = 0
+
+    for row in range(appState.matrixSize):
+        for col in range(appState.matrixSize):
+            field = appState.matrix.matrix[row][col]
+            if field.stack and field.stack[0].color == ai_color:
+                stack_count += 1
+                # Generate valid moves for each stack
+                for dx, dy in [(-1, -1), (-1, 1), (1, -1), (1, 1)]:
+                    destPos = (row + dx, col + dy)
+                    if validField(destPos):
+                        for sliceIndex in range(len(field.stack)):
+                            if checkMove((row, col), sliceIndex, destPos):
+                                valid_moves.append(((row, col), sliceIndex, destPos))
+
+    return stack_count, valid_moves
+
+def evaluate_game_state( ai_color):
+    global AppState
+    ai_control = 0
+    potential_moves = 0
+
+    for row in appState.matrix.matrix:
+        for field in row:
+            if field.stack:
+                    # Count stacks controlled by AI
+                if field.stack[-1].color == ai_color:
+                    ai_control += 1
+                    # Count potential moves for AI
+                if field.stack[0].color == ai_color:
+                    potential_moves += len(get_valid_moves(field))
+
+        # Scoring function can be adjusted based on game strategy
+    return ai_control + potential_moves
+
+def is_terminal_node():
+        # Check if the game has reached the win condition for either player
+        if appState.players[0].score >= appState.winCondition or appState.players[1].score >= appState.winCondition:
+            return True
+
+        return False
+
+def apply_move(move):  # samo privremeno nek ode potez u appState
+    global appState
+    global previous_state
+    previous_state= appState.copy_state()
+    # 'move' should contain all necessary information like startPos, sliceIndex, and destPos
+    appState.set_state(move[0], move[1], move[2])
+def undo_move():
+        global appState
+        global previous_state
+        appState.restore_state(previous_state)
+
+def minmax(depth, maximizingPlayer):
+        global appState
+        if depth == 0 or is_terminal_node():
+            return evaluate_game_state()
+
+        if maximizingPlayer:
+            maxEval = float('-inf')
+            for move in get_valid_moves(appState, appState.get_opponent(appState.currentPlayer).color):
+                apply_move(move)
+                eval = minmax(depth - 1, False)
+                maxEval = max(maxEval, eval)
+                undo_move(move)
+            return maxEval
+        else:
+            minEval = float('inf')
+            for move in get_valid_moves(appState, appState.currentPlayer.color):
+                apply_move(move)
+                eval = minmax(depth - 1, True)
+                minEval = min(minEval, eval)
+                undo_move(move)
+            return minEval
 
 choice_singleplayer = ("singleplayer", "multiplayer")
 singleplayer_text = "Izaberite mod igre"
