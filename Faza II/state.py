@@ -74,7 +74,9 @@ class AppState:
     def switchPlayer(self):
         print("switching players")
         self.currentPlayer = self.players[1] if self.currentPlayer == self.players[0] else self.players[0]
-
+#--------------------------------------------------------------------
+        
+        
     def evaluate_game_state(self, ai_color):
         ai_control = 0
         potential_moves = 0

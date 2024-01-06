@@ -240,6 +240,10 @@ def performMove():
 
 
 def checkMove(startPos, sliceIndex, destPos):
+    print("START JE U CHECK:"+ str(startPos))
+    print("END JE U CHECK:"+str(destPos))
+    print("SLICE JE: "+ str(sliceIndex))
+
     start_time = time.perf_counter_ns()
     end_time = time.perf_counter_ns()
     if (appState.matrix.matrix[startPos[0]][startPos[1]].stack[sliceIndex].color != appState.currentPlayer.color):
@@ -257,7 +261,11 @@ def checkMove(startPos, sliceIndex, destPos):
         end_time = time.perf_counter_ns()
         print("check move time: " + str(end_time - start_time))
         return False
+    
     possiblePaths = possibleDestinations()
+
+    print("MOGUCI PATS SU:"+ str(possiblePaths))
+
     sliceIndex = appState.currentMove[1]
     print('\n')
     print(possiblePaths)
@@ -436,7 +444,7 @@ def possibleDestinations():
     print(nearestStacks)
     return nearestStacks
 
-#for AI --------------------------
+#f-------------------------for AI --------------------------
 def get_valid_moves(appState, ai_color):
     valid_moves = []
     stack_count = 0
@@ -451,6 +459,7 @@ def get_valid_moves(appState, ai_color):
                     destPos = (row + dx, col + dy)
                     if validField(destPos):
                         for sliceIndex in range(len(field.stack)):
+                            print("ROW I COL SU "+str(row)+str(col))
                             if checkMove((row, col), sliceIndex, destPos):
                                 valid_moves.append(((row, col), sliceIndex, destPos))
 
@@ -513,7 +522,7 @@ def minmax(depth, maximizingPlayer):
                 minEval = min(minEval, eval)
                 undo_move(move)
             return minEval
-
+#--------------------------------------------------------------------------------------
 choice_singleplayer = ("singleplayer", "multiplayer")
 singleplayer_text = "Izaberite mod igre"
 alert_sp = tp.AlertWithChoices("", choice_singleplayer, singleplayer_text, choice_mode="h")
