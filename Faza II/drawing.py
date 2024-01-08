@@ -91,8 +91,8 @@ def blit_before_gui():
     pygame.display.update()
     if appState and appState.finished == True:
         winAlert = tp.Alert("Kraj igre", "Pobednik je: " + appState.currentPlayer.type.value)
-        winAlert.launch()
-       # loop.playing = False
+        winAlert.launch_alone()
+        loop.playing = False
 
 
 def draw_chessboard():
@@ -109,8 +109,9 @@ def draw_chessboard():
                 draw_square(matrix[row][col], center_x+col*square_size, center_y+row*square_size, square_size, appState and appState.currentMove[0] == (row, col))
 
 def draw_boxes_for_scores():
+    if not appState:
+        return
     global isSingleplayer
-    global appState
     box_width, box_height = 100, 50  
     border_thickness = 2  
     box_margin = 10  
@@ -120,7 +121,7 @@ def draw_boxes_for_scores():
 
     # ovde treba zapravo score koji brojimo
     player_name="AI" if isSingleplayer else "Player2"
-    players = [("YOU", appState.currentPlayer.score), (player_name, appState.currentPlayer.score)]
+    players = [("YOU", appState.players[0].score), (player_name, appState.players[1].score)]
 
     for i, (player_name, score) in enumerate(players):
         # i = 0, igrac je na levoj strani, inace na desnoj
