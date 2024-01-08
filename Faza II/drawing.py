@@ -95,7 +95,8 @@ def blit_before_gui():
        # loop.playing = False
 
 
-def draw_chessboard(square_size=64):
+def draw_chessboard():
+    square_size = appState.square_size
     total_width = matrix_size * square_size
     total_height = matrix_size * square_size
     if appState:
@@ -178,7 +179,7 @@ def draw_mica(mica, x, y, width, selected=False):
     
 def selectMica(pos):
 
-    square_size = 64
+    square_size = appState.square_size
     try:
         total_width = matrix_size * square_size
         total_height = matrix_size * square_size
@@ -207,7 +208,7 @@ def selectMica(pos):
         pass
 
 def selectDestSquare(pos):
-    square_size = 64
+    square_size = appState.square_size
     try:
         total_width = matrix_size * square_size
         total_height = matrix_size * square_size
@@ -227,8 +228,9 @@ def performMove():
     startPos = appState.currentMove[0]
     destPos = appState.currentMove[2]
     sliceIndex = appState.currentMove[1]
-    if not checkMove(startPos, sliceIndex, destPos):
-        print("nevalidan potez")
+    valid, reason = checkMove(startPos, sliceIndex, destPos)
+    if not valid:
+        print(reason)
         appState.currentMove = [None, None, None]
         return
     startPos = appState.currentMove[0]
@@ -249,38 +251,42 @@ def checkMove(startPos, sliceIndex, destPos):
     if (appState.matrix.matrix[startPos[0]][startPos[1]].stack[sliceIndex].color != appState.currentPlayer.color):
         end_time = time.perf_counter_ns()
         print("check move time: " + str(end_time - start_time))
-        return False
+        return False, "wrong color"
     dx = abs( startPos[0] - destPos[0])
     dy = abs(startPos[1] - destPos[1])
     if not dx == 1 or not dy == 1:
         end_time = time.perf_counter_ns()
         print("check move time: " + str(end_time - start_time))
-        return False
+        return False, "not adjacent"
     if len(appState.matrix.matrix[destPos[0]][destPos[1]].stack) + \
         len(appState.matrix.matrix[startPos[0]][startPos[1]].stack[sliceIndex:]) > 8:
         end_time = time.perf_counter_ns()
         print("check move time: " + str(end_time - start_time))
-        return False
+        return False, "stack overflow"
     
-    possiblePaths = possibleDestinations()
+    possiblePaths, neighbours = possibleDestinations(startPos)
+    if not neighbours:
+        if (appState.matrix.matrix[startPos[0]][startPos[1]].stack[0].color == appState.currentPlayer.color):
+            appState.currentMove[1] = 0
+            sliceIndex = 0
+        else:
+            return False, "does not own stack"
 
     print("MOGUCI PATS SU:"+ str(possiblePaths))
-
-    sliceIndex = appState.currentMove[1]
     print('\n')
     print(possiblePaths)
     possibleDests = list(filter(lambda x: x[1] == destPos, possiblePaths))
     if len(possibleDests) == 0:
         end_time = time.perf_counter_ns()
         print("check move time: " + str(end_time - start_time))
-        return False
-    if (len(appState.matrix.matrix[destPos[0]][destPos[1]].stack) <= appState.currentMove[1] and appState.currentMove[1] != 0):
+        return False, "selected field not valid"
+    if (len(appState.matrix.matrix[destPos[0]][destPos[1]].stack) <= sliceIndex and sliceIndex != 0):
         end_time = time.perf_counter_ns()
         print("check move time: " + str(end_time - start_time))
-        return False
+        return False, "new position cant be lower than current"
     end_time = time.perf_counter_ns()
     print("check move time: " + str(end_time - start_time))
-    return True
+    return True, "ok"
 
 def aiMove():
     global appState
@@ -288,8 +294,10 @@ def aiMove():
 
     best_score = float('-inf')
     best_move = None
-
-    for move in get_valid_moves(appState, appState.currentPlayer.color):
+    moves = get_valid_moves(appState, appState.currentPlayer.color)
+    for move in moves:
+        print("one move\n" )
+        print(move)
         apply_move(move)
         score = minmax(depth=3, maximizingPlayer=False)  # Adjust depth as needed
         undo_move(move)
@@ -302,7 +310,6 @@ def aiMove():
     if best_move:
         appState.currentMove = [best_move[0], best_move[1], best_move[2]]
         performMove()
-        appState.switchPlayer()
 
     return best_move  # Optional
 
@@ -359,100 +366,95 @@ def findNearestDestBFS(startPos):
                 q.append(neighbour)
     return closest
 
-
-
-def diagonalHeuristics(pos, dest):
-    dx = abs(pos[0] - dest[0])
-    dy = abs(pos[1] - dest[1])
-    return (dx + dy) - 0.587 * min(dx, dy)
-
-def findShortestRoute(startPos, destPos):
-    end = False
-    openSet = set()
-    closedSet = set()
-    openSet.add(startPos)
-    g = {}
-    g[startPos] = 0
-    prev_node = {}
-    prev_node[startPos] = None
-    while len(openSet) > 0 and not end:
-        current = None
-        for pos in openSet:
-            if current is None or g[pos] + diagonalHeuristics(pos, destPos) < g[current] + diagonalHeuristics(current, destPos):
-                current = pos
-        if current == destPos:
-            end = True
-            break
-        for neighbour in getNeighbours(current):
-            if neighbour not in openSet and neighbour not in closedSet:
-                openSet.add(neighbour)
-                prev_node[neighbour] = current
-                g[neighbour] = g[current] + 1
-            else:
-                if g[neighbour] > g[current] + 1:
-                    g[neighbour] = g[current] + 1
-                    prev_node[neighbour] = current
-                    if neighbour in closedSet:
-                        closedSet.remove(neighbour)
-                        openSet.add(neighbour)
-        openSet.remove(current)
-        closedSet.add(current)
-    path = []
-    if end:
-        pos = destPos
-        while prev_node[pos] is not None:
-            path.append(pos)
-            pos = prev_node[pos]
-        path.append(startPos)
-        path.reverse()
-    return path
-
-def findNearestDests(startPos):
-    paths = []
-    searchesConducted = 0
-    print("for search")
-    for i in range(appState.matrixSize):
-        for j in range(appState.matrixSize):
-            if len(appState.matrix.matrix[i][j].stack) > 0 and (i, j) != startPos:
-                newPath = findShortestRoute(startPos, (i, j))
-                searchesConducted += 1
-                if not paths:
-                    paths.append(newPath)
-                if paths and len(newPath) < len(paths[0]):
-                    paths.clear()
-                if paths and len(newPath) > len(paths[0]):
-                    continue
-                paths.append(newPath)
-                
-    print("Searches: " + str(searchesConducted))
-    return paths
-    
 #moguca odredista za trenutno selektovano polje
-def possibleDestinations():
-    if not appState and not appState.currentMove[0]:
-        return []
-    startPos = appState.currentMove[0]
+def possibleDestinations(startPos):
     destinations = []
     neighbours = getNeighbours(startPos)
     for neighbour in neighbours:
         if len(appState.matrix.matrix[neighbour[0]][neighbour[1]].stack) > 0:
             destinations.append(neighbour)
     if (len(destinations) > 0):
-        return list(map(lambda x: [appState.currentMove[0], x], destinations))
-    nearestStacks = findNearestDestBFS(startPos) 
-    appState.currentMove[1] = 0 #mora da pomeri ceo stack jer nema suseda na koji moze da se popne
+        return list(map(lambda x: [startPos, x], destinations)), True
+    nearestStacks = findNearestDestBFS(startPos)
     print(nearestStacks)
-    return nearestStacks
+    return nearestStacks, False
+
+# def diagonalHeuristics(pos, dest):
+#     dx = abs(pos[0] - dest[0])
+#     dy = abs(pos[1] - dest[1])
+#     return (dx + dy) - 0.587 * min(dx, dy)
+
+# def findShortestRoute(startPos, destPos):
+#     end = False
+#     openSet = set()
+#     closedSet = set()
+#     openSet.add(startPos)
+#     g = {}
+#     g[startPos] = 0
+#     prev_node = {}
+#     prev_node[startPos] = None
+#     while len(openSet) > 0 and not end:
+#         current = None
+#         for pos in openSet:
+#             if current is None or g[pos] + diagonalHeuristics(pos, destPos) < g[current] + diagonalHeuristics(current, destPos):
+#                 current = pos
+#         if current == destPos:
+#             end = True
+#             break
+#         for neighbour in getNeighbours(current):
+#             if neighbour not in openSet and neighbour not in closedSet:
+#                 openSet.add(neighbour)
+#                 prev_node[neighbour] = current
+#                 g[neighbour] = g[current] + 1
+#             else:
+#                 if g[neighbour] > g[current] + 1:
+#                     g[neighbour] = g[current] + 1
+#                     prev_node[neighbour] = current
+#                     if neighbour in closedSet:
+#                         closedSet.remove(neighbour)
+#                         openSet.add(neighbour)
+#         openSet.remove(current)
+#         closedSet.add(current)
+#     path = []
+#     if end:
+#         pos = destPos
+#         while prev_node[pos] is not None:
+#             path.append(pos)
+#             pos = prev_node[pos]
+#         path.append(startPos)
+#         path.reverse()
+#     return path
+
+# def findNearestDests(startPos):
+#     paths = []
+#     searchesConducted = 0
+#     print("for search")
+#     for i in range(appState.matrixSize):
+#         for j in range(appState.matrixSize):
+#             if len(appState.matrix.matrix[i][j].stack) > 0 and (i, j) != startPos:
+#                 newPath = findShortestRoute(startPos, (i, j))
+#                 searchesConducted += 1
+#                 if not paths:
+#                     paths.append(newPath)
+#                 if paths and len(newPath) < len(paths[0]):
+#                     paths.clear()
+#                 if paths and len(newPath) > len(paths[0]):
+#                     continue
+#                 paths.append(newPath)
+                
+#     print("Searches: " + str(searchesConducted))
+#     return paths
+    
+
 
 #f-------------------------for AI --------------------------
 def get_valid_moves(appState, ai_color):
     valid_moves = []
     stack_count = 0
-
     for row in range(appState.matrixSize):
         for col in range(appState.matrixSize):
             field = appState.matrix.matrix[row][col]
-            if field.stack and field.stack[0].color == ai_color:
+            if field.stack and list(filter(lambda x: x.color == ai_color, field.stack)):
                 stack_count += 1
                 # Generate valid moves for each stack
                 for dx, dy in [(-1, -1), (-1, 1), (1, -1), (1, 1)]:
@@ -460,16 +462,18 @@ def get_valid_moves(appState, ai_color):
                     if validField(destPos):
                         for sliceIndex in range(len(field.stack)):
                             print("ROW I COL SU "+str(row)+str(col))
-                            if checkMove((row, col), sliceIndex, destPos):
+                            validity, reason = checkMove((row, col), sliceIndex, destPos)
+                            if validity:
                                 valid_moves.append(((row, col), sliceIndex, destPos))
+    print("valid moves\n")
+    print(valid_moves)
+    return valid_moves
 
-    return stack_count, valid_moves
-
-def evaluate_game_state( ai_color):
+def evaluate_game_state():
     global AppState
     ai_control = 0
     potential_moves = 0
-
+    ai_color = list(filter(lambda x: x.type == PlayerType.Computer, appState.players))[0].color
     for row in appState.matrix.matrix:
         for field in row:
             if field.stack:
@@ -478,16 +482,15 @@ def evaluate_game_state( ai_color):
                     ai_control += 1
                     # Count potential moves for AI
                 if field.stack[0].color == ai_color:
-                    potential_moves += len(get_valid_moves(field))
+                    potential_moves += len(get_valid_moves(field, ai_color))
 
         # Scoring function can be adjusted based on game strategy
     return ai_control + potential_moves
 
 def is_terminal_node():
         # Check if the game has reached the win condition for either player
-        if appState.players[0].score >= appState.winCondition or appState.players[1].score >= appState.winCondition:
+        if appState.finished == True:
             return True
-
         return False
 
 def apply_move(move):  # samo privremeno nek ode potez u appState

@@ -1,4 +1,5 @@
 from copy import deepcopy
+import copy
 from enum import Enum
 #klasa za svaku Micu
 class Mica:
@@ -45,7 +46,7 @@ class AppState:
         self.players = [Player(PlayerType.Player, \
                                Color.WHITE if firstPlayer==PlayerType.Player.value else Color.BLACK), \
                                 Player(PlayerType.Computer, Color.WHITE if firstPlayer == PlayerType.Computer.value \
-                                else Color.WHITE)] if mode == "singleplayer" else \
+                                else Color.BLACK)] if mode == "singleplayer" else \
                                 [Player(PlayerType.Player, Color.WHITE), Player(PlayerType.Player, Color.BLACK)]
         self.currentPlayer = self.players[0] if self.players[0].color == Color.WHITE else self.players[1]
         self.finished = False
@@ -53,6 +54,13 @@ class AppState:
         self.winCondition = (N-2)*(N/2)/8/2
         self.currentMove = [None, None, None]
         self.matrixSize = N
+        match N:
+            case 8:  self.square_size = 64
+            case 10: self.square_size = 52
+            case 12: self.square_size = 54
+            case 14: self.square_size = 46
+            case 16: self.square_size = 40
+            case _: self.square_size = 64
 
     #valid move => (src(x, y), stackslice, dst(x, y))
     def set_state(self, src, stackslice, dst):
@@ -98,12 +106,16 @@ class AppState:
         return self.players[1] if currentPlayer == self.players[0] else self.players[0]
     def copy_state(self):
         # Create a deep copy of the current state
-        state_copy = {
-            "matrix": deepcopy(self.matrix), 
-            "currentPlayer": self.currentPlayer,
-            "players": deepcopy(self.players),
-            "finished": self.finished
-        }
+        # state_copy = {
+        #     "matrix": deepcopy(self.matrix), 
+        #     "currentPlayer": self.currentPlayer,
+        #     "players": deepcopy(self.players),
+        #     "finished": self.finished,
+        #     "matrixSize": self.matrixSize,
+        #     "currentMove": self.currentMove,
+        #     "winCondition": 
+        # }
+        state_copy = copy.deepcopy(self)
         return state_copy
 
     def restore_state(self, state_copy):
