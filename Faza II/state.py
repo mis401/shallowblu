@@ -68,7 +68,7 @@ class AppState:
         self.matrix.matrix[src[0]][src[1]].stack = self.matrix.matrix[src[0]][src[1]].stack[:stackslice]
         self.matrix.matrix[dst[0]][dst[1]].stack = self.matrix.matrix[dst[0]][dst[1]].stack + extractedSlice
         if len(self.matrix.matrix[dst[0]][dst[1]].stack) == 8:
-            self.scoreIncrement(self.matrix.matrix[dst[0]][dst[1]].stack[7].color)
+            self.scoreIncrement()
             self.matrix.matrix[dst[0]][dst[1]].stack.clear()
         if self.finished==False:
             self.switchPlayer()

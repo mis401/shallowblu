@@ -21,7 +21,7 @@ appState = None
 selectedMica = None
 selectedSquare = None
 destSquare = None
-previous_state=None
+#previous_state=None
 
 pygame.init()
 W, H = 1200, 700
@@ -242,26 +242,27 @@ def performMove():
 
 
 def checkMove(startPos, sliceIndex, destPos):
-    print("START JE U CHECK:"+ str(startPos))
-    print("END JE U CHECK:"+str(destPos))
-    print("SLICE JE: "+ str(sliceIndex))
-
+    #print("START JE U CHECK:"+ str(startPos))
+    #print("END JE U CHECK:"+str(destPos))
+    #print("SLICE JE: "+ str(sliceIndex))
+    if not appState.matrix.matrix[startPos[0]][startPos[1]].stack:
+        return False, "empty field"
     start_time = time.perf_counter_ns()
     end_time = time.perf_counter_ns()
     if (appState.matrix.matrix[startPos[0]][startPos[1]].stack[sliceIndex].color != appState.currentPlayer.color):
         end_time = time.perf_counter_ns()
-        print("check move time: " + str(end_time - start_time))
+        #print("check move time: " + str(end_time - start_time))
         return False, "wrong color"
     dx = abs( startPos[0] - destPos[0])
     dy = abs(startPos[1] - destPos[1])
     if not dx == 1 or not dy == 1:
         end_time = time.perf_counter_ns()
-        print("check move time: " + str(end_time - start_time))
+        #print("check move time: " + str(end_time - start_time))
         return False, "not adjacent"
     if len(appState.matrix.matrix[destPos[0]][destPos[1]].stack) + \
         len(appState.matrix.matrix[startPos[0]][startPos[1]].stack[sliceIndex:]) > 8:
         end_time = time.perf_counter_ns()
-        print("check move time: " + str(end_time - start_time))
+        #print("check move time: " + str(end_time - start_time))
         return False, "stack overflow"
     
     possiblePaths, neighbours = possibleDestinations(startPos)
@@ -278,33 +279,31 @@ def checkMove(startPos, sliceIndex, destPos):
     possibleDests = list(filter(lambda x: x[1] == destPos, possiblePaths))
     if len(possibleDests) == 0:
         end_time = time.perf_counter_ns()
-        print("check move time: " + str(end_time - start_time))
+        #print("check move time: " + str(end_time - start_time))
         return False, "selected field not valid"
     if (len(appState.matrix.matrix[destPos[0]][destPos[1]].stack) <= sliceIndex and sliceIndex != 0):
         end_time = time.perf_counter_ns()
-        print("check move time: " + str(end_time - start_time))
+        #print("check move time: " + str(end_time - start_time))
         return False, "new position cant be lower than current"
     end_time = time.perf_counter_ns()
-    print("check move time: " + str(end_time - start_time))
+    #print("check move time: " + str(end_time - start_time))
     return True, "ok"
 
 def aiMove():
-    global appState
     print("AI move")
 
     best_score = float('-inf')
     best_move = None
     moves = get_valid_moves(appState, appState.currentPlayer.color)
     for move in moves:
-        print("one move\n" )
-        print(move)
-        apply_move(move)
-        score = minmax(depth=3, maximizingPlayer=False)  # Adjust depth as needed
-        undo_move(move)
+        previous_state = apply_move(move)
+        score = minmax(depth=1, maximizingPlayer=False)  # Adjust depth as needed
+        undo_move(previous_state)
 
         if score > best_score:
             best_score = score
             best_move = move
+            print(move)
 
     # Perform the best move
     if best_move:
@@ -315,7 +314,7 @@ def aiMove():
 
 #okvir table
 def validField(field):
-    return field[0] >= 0 and field[0] < matrix_size and field[1] >= 0 and field[1] < matrix_size
+    return field[0] >= 0 and field[0] < appState.matrixSize and field[1] >= 0 and field[1] < appState.matrixSize
 
 #vraca dijagonalno susedna polja 
 def getNeighbours(field):
@@ -340,18 +339,24 @@ def findNearestDestBFS(startPos):
     prev_node = {}
     prev_node[startPos] = None
     closestG = -1
+    print(len(q))
     while len(q) > 0:
-        current = q.pop()
-        if current in visited or g[current] >= closestG:
+        current = q.pop(0)
+        print(current)
+        if current in visited:
             continue
         visited.add(current)
+        print('visited new node')
         neighbours = getNeighbours(current)
         for neighbour in neighbours:
+            print(neighbour)
             if neighbour in visited:
                 continue
+            print('nieghbour not visited')
             prev_node[neighbour] = current
             g[neighbour] = g[current] + 1
             if len(appState.matrix.matrix[neighbour[0]][neighbour[1]].stack) > 0:
+                print('neighbour has stack')
                 foundStack = True
                 path = []
                 prev = neighbour
@@ -364,6 +369,8 @@ def findNearestDestBFS(startPos):
                 closest.append(path)
             if not foundStack:
                 q.append(neighbour)
+    if closest == []:
+        print(startPos)
     return closest
 
 #moguca odredista za trenutno selektovano polje
@@ -375,6 +382,7 @@ def possibleDestinations(startPos):
             destinations.append(neighbour)
     if (len(destinations) > 0):
         return list(map(lambda x: [startPos, x], destinations)), True
+    print(startPos)
     nearestStacks = findNearestDestBFS(startPos)
     print(nearestStacks)
     return nearestStacks, False
@@ -465,8 +473,7 @@ def get_valid_moves(appState, ai_color):
                             validity, reason = checkMove((row, col), sliceIndex, destPos)
                             if validity:
                                 valid_moves.append(((row, col), sliceIndex, destPos))
-    print("valid moves\n")
-    print(valid_moves)
+
     return valid_moves
 
 def evaluate_game_state():
@@ -474,15 +481,16 @@ def evaluate_game_state():
     ai_control = 0
     potential_moves = 0
     ai_color = list(filter(lambda x: x.type == PlayerType.Computer, appState.players))[0].color
-    for row in appState.matrix.matrix:
-        for field in row:
+    for row in range(appState.matrixSize):
+        for col in range(appState.matrixSize):
+            field = appState.matrix.matrix[row][col]
             if field.stack:
                     # Count stacks controlled by AI
                 if field.stack[-1].color == ai_color:
                     ai_control += 1
                     # Count potential moves for AI
                 if field.stack[0].color == ai_color:
-                    potential_moves += len(get_valid_moves(field, ai_color))
+                    potential_moves += len(possibleDestinations((row, col)))
 
         # Scoring function can be adjusted based on game strategy
     return ai_control + potential_moves
@@ -495,35 +503,33 @@ def is_terminal_node():
 
 def apply_move(move):  # samo privremeno nek ode potez u appState
     global appState
-    global previous_state
-    previous_state= appState.copy_state()
+    previous_state = appState.copy_state()
     # 'move' should contain all necessary information like startPos, sliceIndex, and destPos
     appState.set_state(move[0], move[1], move[2])
-def undo_move():
-        global appState
-        global previous_state
-        appState.restore_state(previous_state)
+    return previous_state
+def undo_move(previous_state):
+        global appState 
+        appState = previous_state
 
 def minmax(depth, maximizingPlayer):
-        global appState
         if depth == 0 or is_terminal_node():
             return evaluate_game_state()
 
         if maximizingPlayer:
             maxEval = float('-inf')
             for move in get_valid_moves(appState, appState.get_opponent(appState.currentPlayer).color):
-                apply_move(move)
+                prevState = apply_move(move)
                 eval = minmax(depth - 1, False)
                 maxEval = max(maxEval, eval)
-                undo_move(move)
+                undo_move(prevState)
             return maxEval
         else:
             minEval = float('inf')
             for move in get_valid_moves(appState, appState.currentPlayer.color):
-                apply_move(move)
+                prevState = apply_move(move)
                 eval = minmax(depth - 1, True)
                 minEval = min(minEval, eval)
-                undo_move(move)
+                undo_move(prevState)
             return minEval
 #--------------------------------------------------------------------------------------
 choice_singleplayer = ("singleplayer", "multiplayer")
@@ -561,6 +567,9 @@ while loop.playing:
     events = pygame.event.get()
     if appState and appState.currentPlayer.type == PlayerType.Player:
         for e in events:
+            if e.type == pygame.KEYDOWN:
+                if e.key == pygame.K_SPACE:
+                    appState.switchPlayer()
             if e.type == pygame.QUIT:
                 loop.playing = False
             if e.type == pygame.MOUSEBUTTONUP:
