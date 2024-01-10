@@ -9,14 +9,12 @@ class Mica:
 #klasa za svako polje na tabli
 class Field:
     def __init__(self, color):
-        print("creating field")
         self.stack: Mica = []
         self.color : Color = color
 
 #klasa za tablu
 class Matrix:
     def __init__(self, N):
-        print("creating matrix")
         self.matrix : Field = [[Field(Color.BLACK if (i+j)%2 == 0 else Color.WHITE) for i in range(N)] \
                                for j in range(N)]
 
@@ -40,7 +38,6 @@ class Player:
 #klasa za celokupno stanje aplikacije
 class AppState:
     def __init__(self, N, firstPlayer, mode):
-        print("creating appstate")
         self.matrix = Matrix(N)
         self.matrix.startPositions()
         self.players = [Player(PlayerType.Player, \
@@ -80,7 +77,6 @@ class AppState:
 
             
     def switchPlayer(self):
-        print("switching players")
         self.currentPlayer = self.players[1] if self.currentPlayer == self.players[0] else self.players[0]
 #--------------------------------------------------------------------
         

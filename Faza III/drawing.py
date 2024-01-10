@@ -53,16 +53,12 @@ def user_choice():
             alert_whos_first.launch_alone(func_before=blit_before_gui)
             isSingleplayer = True 
 
-    print("User has chosen:", alert_size.choice)
     try:
         matrix_size = int(alert_size.choice)
-        print(matrix_size)
         whos_first = alert_whos_first.choice
-        print(whos_first)
         if (whos_first == "computer"):
             isAiFirst = True
         if appState == None and initialState == False:
-            print("usao u if")
             appState = AppState(matrix_size, whos_first, alert_sp.choice)
             initialState = True
     except Exception as e:
@@ -208,11 +204,9 @@ def selectMica(pos):
         inSquare = (pos[1] - top_left_y) % square_size
         upInSquare = abs(inSquare - square_size)
         micaPos = int(upInSquare // (square_size / 8))
-        print(micaPos)
         micaPos = min(micaPos, len(selectedSquare.stack)-1)
         if micaPos < 0:
             raise Exception("Prazno polje")
-        print(micaPos)
            # da li je slektovana protivnicka mica
         if selectedSquare.stack and selectedSquare.stack[micaPos].color!= appState.currentPlayer.color:
             raise Exception("Pogresna boja")
@@ -266,7 +260,6 @@ def performMove():
     startPos = appState.currentMove[0]
     destPos = appState.currentMove[2]
     sliceIndex = appState.currentMove[1]
-    print("prihvacen potez" + str(startPos) + str(sliceIndex) + str(destPos))
     appState.set_state(startPos, sliceIndex, destPos)
     appState.currentMove = [None, None, None]
 
@@ -316,7 +309,6 @@ waiting_bar = tp.WaitingBar("", length=200,rect_color=BEIGE, speed=2.5, rel_widt
 tp.set_waiting_bar(waiting_bar)
 
 def aiMove():
-    print("AI move")
     best_score = float('-inf')
     best_move = None
     moves = get_valid_moves(appState, appState.currentPlayer.color)
@@ -328,7 +320,6 @@ def aiMove():
         if score > best_score:
             best_score = score
             best_move = move
-            print(move)
 
         tp.refresh_waiting_bar()
 
@@ -355,7 +346,6 @@ def getNeighbours(field):
 
 #BFS koji vraca najblize stackove
 def findNearestDestBFS(startPos):
-    print("bfs search")
     closest =[]
     q = []
     visited = set()
@@ -366,24 +356,18 @@ def findNearestDestBFS(startPos):
     prev_node = {}
     prev_node[startPos] = None
     closestG = -1
-    print(len(q))
     while len(q) > 0:
         current = q.pop(0)
-        print(current)
         if current in visited:
             continue
         visited.add(current)
-        print('visited new node')
         neighbours = getNeighbours(current)
         for neighbour in neighbours:
-            print(neighbour)
             if neighbour in visited:
                 continue
-            print('nieghbour not visited')
             prev_node[neighbour] = current
             g[neighbour] = g[current] + 1
             if len(appState.matrix.matrix[neighbour[0]][neighbour[1]].stack) > 0:
-                print('neighbour has stack')
                 foundStack = True
                 path = []
                 prev = neighbour
@@ -396,8 +380,8 @@ def findNearestDestBFS(startPos):
                 closest.append(path)
             if not foundStack:
                 q.append(neighbour)
-    if closest == []:
-        print(startPos)
+    # if closest == []:
+    #     print(startPos)
     return closest
 
 #moguca odredista za trenutno selektovano polje
@@ -409,9 +393,7 @@ def possibleDestinations(startPos):
             destinations.append(neighbour)
     if (len(destinations) > 0):
         return list(map(lambda x: [startPos, x], destinations)), True
-    print(startPos)
     nearestStacks = findNearestDestBFS(startPos)
-    print(nearestStacks)
     return nearestStacks, False
 
 
@@ -554,11 +536,9 @@ while loop.playing:
                 loop.playing = False
             if e.type == pygame.MOUSEBUTTONUP:
                 if appState and not appState.currentMove[0]:
-                    print("selekting mica")
                     selectMica(pygame.mouse.get_pos())
                     
                 elif appState and appState.currentMove[0] and not appState.currentMove[2]:
-                    print("selekting dest square")
                     dest = selectDestSquare(pygame.mouse.get_pos())
                     if (dest):
                         performMove()
