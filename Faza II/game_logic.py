@@ -1,7 +1,6 @@
 import time
 from drawing import possibleDestinations
 from state import AppState, Color
-#trebali bi ovako nesto al jbg
 
 def checkMove(appState, startPos, sliceIndex, destPos):
     

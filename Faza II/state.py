@@ -99,22 +99,12 @@ class AppState:
                     if field.stack[0].color == ai_color:
                         potential_moves += len(self.get_valid_moves(field))
 
-        # Scoring function can be adjusted based on game strategy
         return ai_control + potential_moves
 
     def get_opponent(self, currentPlayer):
         return self.players[1] if currentPlayer == self.players[0] else self.players[0]
     def copy_state(self):
-        # Create a deep copy of the current state
-        # state_copy = {
-        #     "matrix": deepcopy(self.matrix), 
-        #     "currentPlayer": self.currentPlayer,
-        #     "players": deepcopy(self.players),
-        #     "finished": self.finished,
-        #     "matrixSize": self.matrixSize,
-        #     "currentMove": self.currentMove,
-        #     "winCondition": 
-        # }
+ 
         state_copy = copy.deepcopy(self)
         return state_copy
 

@@ -26,34 +26,41 @@ destSquare = None
 pygame.init()
 W, H = 1200, 700
 screen = pygame.display.set_mode((W, H))
-tp.init(screen, tp.theme_human)  # bind screen to gui elements and set theme
+pygame.display.set_caption('Shallow blue')
+tp.init(screen, tp.theme_human)  
 
 
 matrix_size = 0
 whos_first=""
 isSingleplayer = False
+isAiFirst = False
+possible_moves = []
 
 def user_choice():
     global matrix_size
     global initialState
     global appState
     global isSingleplayer
+    global isAiFirst
+    alert_start.launch_alone()
+
     launcher.set_invisible(True)    
     if initialState == False:
         alert_sp.launch_alone(func_before=blit_before_gui)
-        alert1.launch_alone(func_before=blit_before_gui)
+        alert_size.launch_alone(func_before=blit_before_gui)
         #alert1._at_click = close_alert
         if (alert_sp.choice == "singleplayer"):        
-            alert2.launch_alone(func_before=blit_before_gui)
+            alert_whos_first.launch_alone(func_before=blit_before_gui)
             isSingleplayer = True 
 
-    print("User has chosen:", alert1.choice)
+    print("User has chosen:", alert_size.choice)
     try:
-        matrix_size = int(alert1.choice)
+        matrix_size = int(alert_size.choice)
         print(matrix_size)
-        whos_first = alert2.choice
-        print('preprint')
+        whos_first = alert_whos_first.choice
         print(whos_first)
+        if (whos_first == "computer"):
+            isAiFirst = True
         if appState == None and initialState == False:
             print("usao u if")
             appState = AppState(matrix_size, whos_first, alert_sp.choice)
@@ -63,7 +70,7 @@ def user_choice():
         pass
 
 def blit_before_gui():
-
+    global isAiFirst
     gradient = tp.graphics.color_gradient((BLUE, WHITE), (W, H), "v")
     screen.blit(gradient, (0, 0))
 
@@ -73,19 +80,19 @@ def blit_before_gui():
     draw_boxes_for_scores()
 
      # Da pise ciji je red 
-    font = pygame.font.Font(None, 36)  # Adjust the font size as needed
+    font = pygame.font.Font(None, 36)  
 
     if appState and appState.currentPlayer:
         if appState.currentPlayer.type == PlayerType.Player:
-            text_color=BEIGE
+            text_color=BLUE if isAiFirst else BEIGE
             turn_text = "Your turn"
-            text_position = (10, 10)  
+            text_position = (10, 10) if not isAiFirst else (W - 150, 10)
         else:
-            text_color=BLUE
+            text_color=BEIGE if isAiFirst else BLUE
             turn_text = "AI's turn"
-            text_position = (W - 150, 10)  
-        # Render
-        turn_surface = font.render(turn_text, True, text_color)  # Black text
+            text_position = (W - 150, 10) if not isAiFirst else (10, 10) 
+
+        turn_surface = font.render(turn_text, True, text_color)
         screen.blit(turn_surface, text_position)
 
     pygame.display.update()
@@ -96,6 +103,7 @@ def blit_before_gui():
 
 
 def draw_chessboard():
+    global possible_moves
     square_size = appState.square_size
     total_width = matrix_size * square_size
     total_height = matrix_size * square_size
@@ -106,12 +114,17 @@ def draw_chessboard():
 
         for row in range(matrix_size):
             for col in range(matrix_size):
-                draw_square(matrix[row][col], center_x+col*square_size, center_y+row*square_size, square_size, appState and appState.currentMove[0] == (row, col))
+                
+                selected = appState.currentMove and appState.currentMove[0] == (row, col)
+                possible_move = (row, col) in possible_moves
+
+                draw_square(matrix[row][col], center_x+col*square_size, center_y+row*square_size, square_size,  selected or possible_move)
 
 def draw_boxes_for_scores():
     if not appState:
         return
     global isSingleplayer
+    global isAiFirst
     box_width, box_height = 100, 50  
     border_thickness = 2  
     box_margin = 10  
@@ -119,12 +132,13 @@ def draw_boxes_for_scores():
 
     font = pygame.font.Font(None, 33)  # Adjust the font size as needed
 
-    # ovde treba zapravo score koji brojimo
     player_name="AI" if isSingleplayer else "Player2"
-    players = [("YOU", appState.players[0].score), (player_name, appState.players[1].score)]
+    if isAiFirst:
+        players = [("AI", appState.players[0].score), ("YOU", appState.players[1].score)]
+    else:
+        players = [("YOU", appState.players[0].score), (player_name, appState.players[1].score)]
 
     for i, (player_name, score) in enumerate(players):
-        # i = 0, igrac je na levoj strani, inace na desnoj
         x = box_margin if i == 0 else screen.get_width() - box_width - box_margin
         y = screen.get_height() - box_height - box_margin
 
@@ -146,9 +160,8 @@ def draw_boxes_for_scores():
 
 
 def draw_square(field, x, y, square_size, selected = False):
-    color = BLACK if field.color == Color.BLACK else WHITE
-    if selected:
-        color = GRAY
+
+    color = GRAY if selected else (BLACK if field.color == Color.BLACK else WHITE)
     pygame.draw.rect(screen, color, [x, y, square_size, square_size])
     dy = square_size / 8
     bottom = y + square_size
@@ -161,12 +174,10 @@ def draw_mica(mica, x, y, width, selected=False):
     color = BLUE if mica.color == Color.BLACK else BEIGE
     if selected:
         color = GRAY
-    border_color = (0, 0, 0)  # Green, for example
+    border_color = (0, 0, 0)  
     # ovo ce biti crni okvir
     mica = pygame.draw.rect(screen, border_color, [x, y, width, height])
-
     border_thickness = 1  
-
     inner_x = x + border_thickness
     inner_y = y + border_thickness
     inner_width = width - 2 * border_thickness
@@ -180,6 +191,8 @@ def draw_mica(mica, x, y, width, selected=False):
     
 def selectMica(pos):
 
+    global possible_moves
+
     square_size = appState.square_size
     try:
         total_width = matrix_size * square_size
@@ -190,18 +203,33 @@ def selectMica(pos):
         selectedCol = (pos[0] - top_left_x) // square_size  
         selectedRow = (pos[1] - top_left_y) // square_size
         selectedSquare = matrix[selectedRow][selectedCol]
+     
+
         inSquare = (pos[1] - top_left_y) % square_size
-        #print(inSquare)
         upInSquare = abs(inSquare - square_size)
-        #print(upInSquare)
         micaPos = int(upInSquare // (square_size / 8))
         print(micaPos)
         micaPos = min(micaPos, len(selectedSquare.stack)-1)
         if micaPos < 0:
             raise Exception("Prazno polje")
         print(micaPos)
+           # da li je slektovana protivnicka mica
+        if selectedSquare.stack and selectedSquare.stack[micaPos].color!= appState.currentPlayer.color:
+            raise Exception("Pogresna boja")
         appState.currentMove[0] = (selectedRow, selectedCol)
         appState.currentMove[1] = micaPos
+
+
+        possible_moves = []
+        if appState and appState.currentMove[0]:
+        # moguci potezi za selektovanu micu
+            startPos = appState.currentMove[0]
+            sliceIndex = appState.currentMove[1]
+            moves = get_valid_moves(appState, appState.currentPlayer.color)
+            for move in moves:
+                if move[0] == startPos and move[1] == sliceIndex:
+                    possible_moves.append(move[2])  
+
         return True
     except Exception as e:
         appState.currentMove = [None, None, None]
@@ -226,6 +254,7 @@ def selectDestSquare(pos):
         pass
 
 def performMove():
+    global possible_moves
     startPos = appState.currentMove[0]
     destPos = appState.currentMove[2]
     sliceIndex = appState.currentMove[1]
@@ -241,29 +270,27 @@ def performMove():
     appState.set_state(startPos, sliceIndex, destPos)
     appState.currentMove = [None, None, None]
 
+    possible_moves = []
+    draw_chessboard()
+
 
 def checkMove(startPos, sliceIndex, destPos):
-    #print("START JE U CHECK:"+ str(startPos))
-    #print("END JE U CHECK:"+str(destPos))
-    #print("SLICE JE: "+ str(sliceIndex))
     if not appState.matrix.matrix[startPos[0]][startPos[1]].stack:
         return False, "empty field"
     start_time = time.perf_counter_ns()
     end_time = time.perf_counter_ns()
     if (appState.matrix.matrix[startPos[0]][startPos[1]].stack[sliceIndex].color != appState.currentPlayer.color):
         end_time = time.perf_counter_ns()
-        #print("check move time: " + str(end_time - start_time))
         return False, "wrong color"
+    
     dx = abs( startPos[0] - destPos[0])
     dy = abs(startPos[1] - destPos[1])
     if not dx == 1 or not dy == 1:
         end_time = time.perf_counter_ns()
-        #print("check move time: " + str(end_time - start_time))
         return False, "not adjacent"
     if len(appState.matrix.matrix[destPos[0]][destPos[1]].stack) + \
         len(appState.matrix.matrix[startPos[0]][startPos[1]].stack[sliceIndex:]) > 8:
         end_time = time.perf_counter_ns()
-        #print("check move time: " + str(end_time - start_time))
         return False, "stack overflow"
     
     possiblePaths, neighbours = possibleDestinations(startPos)
@@ -274,31 +301,28 @@ def checkMove(startPos, sliceIndex, destPos):
         else:
             return False, "does not own stack"
 
-    print("MOGUCI PATS SU:"+ str(possiblePaths))
     print('\n')
-    print(possiblePaths)
     possibleDests = list(filter(lambda x: x[1] == destPos, possiblePaths))
     if len(possibleDests) == 0:
         end_time = time.perf_counter_ns()
-        #print("check move time: " + str(end_time - start_time))
         return False, "selected field not valid"
     if (len(appState.matrix.matrix[destPos[0]][destPos[1]].stack) <= sliceIndex and sliceIndex != 0):
         end_time = time.perf_counter_ns()
-        #print("check move time: " + str(end_time - start_time))
         return False, "new position cant be lower than current"
     end_time = time.perf_counter_ns()
-    #print("check move time: " + str(end_time - start_time))
     return True, "ok"
+
+waiting_bar = tp.WaitingBar("", length=200,rect_color=BEIGE, speed=2.5, rel_width=0.2, height=10,font_color=BLUE)
+tp.set_waiting_bar(waiting_bar)
 
 def aiMove():
     print("AI move")
-
     best_score = float('-inf')
     best_move = None
     moves = get_valid_moves(appState, appState.currentPlayer.color)
     for move in moves:
         previous_state = apply_move(move)
-        score = minmax(depth=1, maximizingPlayer=False)  # Adjust depth as needed
+        score = minmax(depth=1, maximizingPlayer=False)  
         undo_move(previous_state)
 
         if score > best_score:
@@ -306,12 +330,13 @@ def aiMove():
             best_move = move
             print(move)
 
-    # Perform the best move
+        tp.refresh_waiting_bar()
+
     if best_move:
         appState.currentMove = [best_move[0], best_move[1], best_move[2]]
         performMove()
-
-    return best_move  # Optional
+        
+    return best_move  
 
 #okvir table
 def validField(field):
@@ -325,6 +350,7 @@ def getNeighbours(field):
         dest = (field[0] + direction[0], field[1] + direction[1])
         if validField(dest):
             neighbours.append(dest)
+
     return neighbours
 
 #BFS koji vraca najblize stackove
@@ -388,75 +414,10 @@ def possibleDestinations(startPos):
     print(nearestStacks)
     return nearestStacks, False
 
-# def diagonalHeuristics(pos, dest):
-#     dx = abs(pos[0] - dest[0])
-#     dy = abs(pos[1] - dest[1])
-#     return (dx + dy) - 0.587 * min(dx, dy)
-
-# def findShortestRoute(startPos, destPos):
-#     end = False
-#     openSet = set()
-#     closedSet = set()
-#     openSet.add(startPos)
-#     g = {}
-#     g[startPos] = 0
-#     prev_node = {}
-#     prev_node[startPos] = None
-#     while len(openSet) > 0 and not end:
-#         current = None
-#         for pos in openSet:
-#             if current is None or g[pos] + diagonalHeuristics(pos, destPos) < g[current] + diagonalHeuristics(current, destPos):
-#                 current = pos
-#         if current == destPos:
-#             end = True
-#             break
-#         for neighbour in getNeighbours(current):
-#             if neighbour not in openSet and neighbour not in closedSet:
-#                 openSet.add(neighbour)
-#                 prev_node[neighbour] = current
-#                 g[neighbour] = g[current] + 1
-#             else:
-#                 if g[neighbour] > g[current] + 1:
-#                     g[neighbour] = g[current] + 1
-#                     prev_node[neighbour] = current
-#                     if neighbour in closedSet:
-#                         closedSet.remove(neighbour)
-#                         openSet.add(neighbour)
-#         openSet.remove(current)
-#         closedSet.add(current)
-#     path = []
-#     if end:
-#         pos = destPos
-#         while prev_node[pos] is not None:
-#             path.append(pos)
-#             pos = prev_node[pos]
-#         path.append(startPos)
-#         path.reverse()
-#     return path
-
-# def findNearestDests(startPos):
-#     paths = []
-#     searchesConducted = 0
-#     print("for search")
-#     for i in range(appState.matrixSize):
-#         for j in range(appState.matrixSize):
-#             if len(appState.matrix.matrix[i][j].stack) > 0 and (i, j) != startPos:
-#                 newPath = findShortestRoute(startPos, (i, j))
-#                 searchesConducted += 1
-#                 if not paths:
-#                     paths.append(newPath)
-#                 if paths and len(newPath) < len(paths[0]):
-#                     paths.clear()
-#                 if paths and len(newPath) > len(paths[0]):
-#                     continue
-#                 paths.append(newPath)
-                
-#     print("Searches: " + str(searchesConducted))
-#     return paths
-    
 
 
 #f-------------------------for AI --------------------------
+
 def get_valid_moves(appState, ai_color):
     valid_moves = []
     stack_count = 0
@@ -465,12 +426,11 @@ def get_valid_moves(appState, ai_color):
             field = appState.matrix.matrix[row][col]
             if field.stack and list(filter(lambda x: x.color == ai_color, field.stack)):
                 stack_count += 1
-                # Generate valid moves for each stack
+                # generisi moguce poteze za svaki stek
                 for dx, dy in [(-1, -1), (-1, 1), (1, -1), (1, 1)]:
                     destPos = (row + dx, col + dy)
                     if validField(destPos):
                         for sliceIndex in range(len(field.stack)):
-                            print("ROW I COL SU "+str(row)+str(col))
                             validity, reason = checkMove((row, col), sliceIndex, destPos)
                             if validity:
                                 valid_moves.append(((row, col), sliceIndex, destPos))
@@ -478,26 +438,37 @@ def get_valid_moves(appState, ai_color):
     return valid_moves
 
 def evaluate_game_state():
-    global AppState
+    global appState
     ai_control = 0
     potential_moves = 0
+    center_control = 0
+    stack_mobility = 0
     ai_color = list(filter(lambda x: x.type == PlayerType.Computer, appState.players))[0].color
+    center = appState.matrixSize // 2
+
     for row in range(appState.matrixSize):
         for col in range(appState.matrixSize):
             field = appState.matrix.matrix[row][col]
             if field.stack:
-                    # Count stacks controlled by AI
+                # prebroj stekove koje kontrolise AI
                 if field.stack[-1].color == ai_color:
                     ai_control += 1
-                    # Count potential moves for AI
+                    # dodatni poeni za kontrolisanje stekova blizu centra
+                    center_distance = max(abs(center - row), abs(center - col))
+                    center_control += (center - center_distance) ** 2
+                #Racuna moguce poteze za AI
                 if field.stack[0].color == ai_color:
-                    potential_moves += len(possibleDestinations((row, col)))
+                    move_options = len(possibleDestinations((row, col)))
+                    potential_moves += move_options
+                    #dodatni poeni za stekove sa vise opcija
+                    stack_mobility += move_options ** 2
 
-        # Scoring function can be adjusted based on game strategy
-    return ai_control + potential_moves
+    # skoring funkcija je linearna kombinacija svih faktora
+    return ai_control + potential_moves + center_control + stack_mobility
+
 
 def is_terminal_node():
-        # Check if the game has reached the win condition for either player
+        # proveri da li je igra zavrsena
         if appState.finished == True:
             return True
         return False
@@ -505,52 +476,60 @@ def is_terminal_node():
 def apply_move(move):  # samo privremeno nek ode potez u appState
     global appState
     previous_state = appState.copy_state()
-    # 'move' should contain all necessary information like startPos, sliceIndex, and destPos
     appState.set_state(move[0], move[1], move[2])
     return previous_state
 def undo_move(previous_state):
         global appState 
         appState = previous_state
 
-def minmax(depth, maximizingPlayer):
-        if depth == 0 or is_terminal_node():
-            return evaluate_game_state()
+def minmax(depth, maximizingPlayer, alpha=float('-inf'), beta=float('inf')):
+    if depth == 0 or is_terminal_node():
+        return evaluate_game_state()
 
-        if maximizingPlayer:
-            maxEval = float('-inf')
-            for move in get_valid_moves(appState, appState.get_opponent(appState.currentPlayer).color):
-                prevState = apply_move(move)
-                eval = minmax(depth - 1, False)
-                maxEval = max(maxEval, eval)
-                undo_move(prevState)
-            return maxEval
-        else:
-            minEval = float('inf')
-            for move in get_valid_moves(appState, appState.currentPlayer.color):
-                prevState = apply_move(move)
-                eval = minmax(depth - 1, True)
-                minEval = min(minEval, eval)
-                undo_move(prevState)
-            return minEval
+    if maximizingPlayer:
+        maxEval = float('-inf')
+        for move in get_valid_moves(appState, appState.get_opponent(appState.currentPlayer).color):
+            prevState = apply_move(move)
+            eval = minmax(depth - 1, False, alpha, beta)
+            maxEval = max(maxEval, eval)
+            undo_move(prevState)
+            alpha = max(alpha, eval)
+            if beta <= alpha:
+                break
+        return maxEval
+    else:
+        minEval = float('inf')
+        for move in get_valid_moves(appState, appState.currentPlayer.color):
+            prevState = apply_move(move)
+            eval = minmax(depth - 1, True, alpha, beta)
+            minEval = min(minEval, eval)
+            undo_move(prevState)
+            beta = min(beta, eval)
+            if beta <= alpha:
+                break
+        return minEval
 #--------------------------------------------------------------------------------------
 choice_singleplayer = ("singleplayer", "multiplayer")
 singleplayer_text = "Izaberite mod igre"
 alert_sp = tp.AlertWithChoices("", choice_singleplayer, singleplayer_text, choice_mode="h")
 choices_whos_first = ("player", "computer")
 whos_first_text = "Ko prvi igra?"
-alert2 = tp.AlertWithChoices("", choices_whos_first, whos_first_text, choice_mode="h")
+alert_whos_first = tp.AlertWithChoices("", choices_whos_first, whos_first_text, choice_mode="h")
 choices_matix = ("8", "10", "12", "14", "16")
 matrix_text = "Koju zelite dimeziju grida?"
-alert1 = tp.AlertWithChoices("", choices_matix, matrix_text, choice_mode="v")
-#set alert bacground color to be black and text color to be white and for theis hover state to be red for the choices
+alert_size = tp.AlertWithChoices("", choices_matix, matrix_text, choice_mode="v")
 
-alert1.set_bck_color(WHITE, "all", True, True, False)
-alert1.set_font_color(BLUE, ["hover", "pressed"], True, True, True)
-alert2.set_bck_color(WHITE, "all", True, True, False)
-alert2.set_font_color(BLUE,  ["hover", "pressed"], True, True, True)
+alert_size.set_bck_color(WHITE, "all", True, True, False)
+alert_size.set_font_color(BLUE, ["hover", "pressed"], True, True, True)
+alert_whos_first.set_bck_color(WHITE, "all", True, True, False)
+alert_whos_first.set_font_color(BLUE,  ["hover", "pressed"], True, True, True)
 alert_sp.set_bck_color(WHITE, "all", True, True, False)
 alert_sp.set_font_color(BLUE, ["hover", "pressed"], True, True, True)
 
+alert_start = tp.Alert("", "Dobrodosli u igru Byte. \n Pravila igre su sledeca: \n 1. Igra se na tabli dimenzija NxN, gde je N broj koji cete izabrati. \n 2. Igra se izmedju dva igraca, crni i beli. \n 3. Prvi igrac selektuje jednu od svojih mica, a zatim jedno od polja na koje moze da se pomeri. \n 4. Mica se moze pomeriti na sva polja koja su dijagonalno susedna, i na kojima se ne nalazi veci stek. \n 5. Ukoliko ne postoji moguci potez za igranje pritisnite SPACE  \n 6. Igrac dobija onaj napunjeni stek na cijem je vrhu njegova boja  \n  7. Pobednik je igrac koji ima vise osvojenih stekova na kraju igre. \n  Srecno!")
+alert_start.set_font_color(BLUE, "all", True, True, True)
+alert_start.set_bck_color(WHITE, "all", True, True, False)
+alert_start.set_opacity_bck_color(200, "all", True, True, False)
 
 launcher = tp.Button("Kreni sa igrom")
 launcher.set_topleft(10, 10)
